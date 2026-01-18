@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "Renderer.hpp"
 
 void Renderer::LoadAssets(){
     _Pieces[(int)Colors::White][(int)Type::Pawn] = LoadTexture("assets/white-pawn.png");
