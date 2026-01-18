@@ -1,4 +1,4 @@
-#include "Board.h"
+#include "Board.hpp"
 
 void Board::Initialize(){
     turn = Colors::White;

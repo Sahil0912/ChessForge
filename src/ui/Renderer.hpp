@@ -1,7 +1,7 @@
 #pragma once
 #include <raylib.h>
-#include "../game/Board.h"
-#include "../game/Piece.h"
+#include "../game/Board.hpp"
+#include "../game/Piece.hpp"
 
 class Renderer{
     private : 

@@ -1,7 +1,7 @@
 #include <raylib.h>
-#include "game/Board.h"
-#include "game/Piece.h"
-#include "ui/Renderer.h"
+#include "game/Board.hpp"
+#include "game/Piece.hpp"
+#include "ui/Renderer.hpp"
 
 
 int main(){

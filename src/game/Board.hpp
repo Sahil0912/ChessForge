@@ -1,5 +1,5 @@
 #pragma once
-#include "Piece.h"
+#include "Piece.hpp"
 #include <array>
 
 class Board
