@@ -226,3 +226,12 @@ std::vector<Move> Board::GenerateMoves(){
     }
     return moves;
 }
+
+/*
+    Remaining stuff :
+        Checks
+        Pawn Promotion
+        Pawn first 2 steps
+        discovered check
+        Castling
+*/
