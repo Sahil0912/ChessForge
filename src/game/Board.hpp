@@ -1,12 +1,21 @@
 #pragma once
 #include "Piece.hpp"
+#include "Move.hpp"
 #include <array>
-
+#include <vector>
 class Board
 {
 private:
     std::array<Piece, 64> squares; // 0 ->a8 and 63 -> h1
     Colors turn;
+    void GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GenerateKnightMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GenerateBishopMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GenerateRookMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GenerateQueenMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GenerateKingMoves(int startSquare, Colors& color, std::vector<Move> &moves);
+    void GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::vector<Move> &moves);
+    void GenerateSlidingMoves(int startSquare, Colors& color, std::vector<std::pair<int, bool>> &offsets, std::vector<Move> &moves);
 
 public:
     Board() = default;
@@ -14,6 +23,7 @@ public:
 
     void Initialize();
     Piece GetPiece(int index) const;
+    std::vector<Move> GenerateMoves();
 };
 
 
