@@ -15,6 +15,8 @@ int main(){
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
+        _Renderer.HandleInput(_Board);
+
         BeginDrawing();
         _Renderer.Draw(_Board);
         EndDrawing();

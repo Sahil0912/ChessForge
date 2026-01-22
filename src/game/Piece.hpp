@@ -5,7 +5,7 @@ enum class Type{
 };
 
 enum class Colors{
-    White, Black, None
+    White = 0, Black = 1, None = 2
 };
 
 typedef struct Piece_{

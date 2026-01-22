@@ -43,6 +43,10 @@ Piece Board::GetPiece(int index) const {
     return squares[index];
 }
 
+Colors Board::GetTurn() const {
+    return turn;
+}
+
 void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves){
     if(color == Colors::Black){
         // Have to move in positive direction
@@ -226,6 +230,27 @@ std::vector<Move> Board::GenerateMoves(){
     }
     return moves;
 }
+
+void Board::MakeMove(Move move){
+    // assuming its valid
+    int startSquare = move.startSquare;
+    
+    int endSquare = move.endSquare;
+
+    if(move.promotionPiece != Type::Empty){
+        squares[endSquare].type = move.promotionPiece;
+    }
+    else {
+        squares[endSquare].type = squares[startSquare].type;
+    }
+    squares[endSquare].color = squares[startSquare].color;
+
+    squares[startSquare].type = Type::Empty;
+    squares[startSquare].color = Colors::None;
+
+    turn = (Colors)(1 - (int)turn);
+}
+
 
 /*
     Remaining stuff :

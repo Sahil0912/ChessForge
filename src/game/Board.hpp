@@ -23,7 +23,9 @@ public:
 
     void Initialize();
     Piece GetPiece(int index) const;
+    Colors GetTurn() const;
     std::vector<Move> GenerateMoves();
+    void MakeMove(Move move);
 };
 
 
