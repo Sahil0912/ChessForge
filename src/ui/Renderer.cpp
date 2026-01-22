@@ -51,7 +51,7 @@ void Renderer::HandleInput(Board& _Board){
             // logging
             std::cout << selectedSquare << std::endl;
 
-            
+
             const Piece currPiece = _Board.GetPiece(selectedSquare);
             if(currPiece.color == _Board.GetTurn()){
                 // good to go
@@ -73,12 +73,16 @@ void Renderer::HandleInput(Board& _Board){
                     selectedSquare = -1;
                 }
             }   
-            else{
+            else{ // already checking in outer else
                 selectedSquare = -1;
             }
         }
         else {
             selectedSquare = y_coor_rect * 8 + x_coor_rect;
+            const Piece currPiece = _Board.GetPiece(selectedSquare);
+            if(currPiece.color != _Board.GetTurn()){
+                selectedSquare = -1;
+            }
         }
     }
     
