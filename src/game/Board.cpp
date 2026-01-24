@@ -50,67 +50,60 @@ Colors Board::GetTurn() const {
 void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves){
     if(color == Colors::Black){
         // Have to move in positive direction
-        if(startSquare < 48){
+        if(startSquare < 16){
             // first move 
-            if(startSquare < 16){
-                if(squares[startSquare + 16].type == Type::Empty && squares[startSquare + 8].type == Type::Empty){
-                    Move move(startSquare, startSquare + 16);
-                    moves.push_back(move);
-                }
-            }
-            // after moves
-            if(squares[startSquare + 8].type == Type::Empty){
-                Move move(startSquare, startSquare + 8);
+            if(squares[startSquare + 16].type == Type::Empty && squares[startSquare + 8].type == Type::Empty){
+                Move move(startSquare, startSquare + 16);
                 moves.push_back(move);
             }
-            if((startSquare + 1) % 8){
-                if(squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White){
-                    Move move(startSquare, startSquare + 9);
-                    moves.push_back(move);
-                }
-            }
-            if(startSquare % 8){
-                if(squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White){
-                    Move move(startSquare, startSquare + 7);
-                    moves.push_back(move);
-                }
+            
+        }
+        // after moves (always can be done)
+        if(squares[startSquare + 8].type == Type::Empty){
+            Move move(startSquare, startSquare + 8);
+            moves.push_back(move);
+        }
+        if((startSquare + 1) % 8){
+            if(squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White){
+                Move move(startSquare, startSquare + 9);
+                moves.push_back(move);
             }
         }
-        else {
-            // pawn promotion
+        if(startSquare % 8){
+            if(squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White){
+                Move move(startSquare, startSquare + 7);
+                moves.push_back(move);
+            }
         }
+        
     }
     else if(color == Colors::White){
         // Have to move in negative direction
-        if(startSquare > 15){
-            // first move 
-            if(startSquare > 47){
-                if(squares[startSquare - 16].type == Type::Empty && squares[startSquare - 8].type == Type::Empty){
-                    Move move(startSquare, startSquare - 16);
-                    moves.push_back(move);
-                }
-            }
-            // after moves
 
-            if(squares[startSquare - 8].type == Type::Empty){
-                Move move(startSquare, startSquare - 8);
+        if(startSquare > 47){
+            if(squares[startSquare - 16].type == Type::Empty && squares[startSquare - 8].type == Type::Empty){
+                Move move(startSquare, startSquare - 16);
                 moves.push_back(move);
             }
-            if((startSquare + 1) % 8){
-                if(squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black){
-                    Move move(startSquare, startSquare - 7);
-                    moves.push_back(move);
-                }
-            }
-            if(startSquare % 8){
-                if(squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black){
-                    Move move(startSquare, startSquare - 9);
-                    moves.push_back(move);
-                }
+        }
+            
+        // after moves (always can be done)
+
+        if(squares[startSquare - 8].type == Type::Empty){
+            Move move(startSquare, startSquare - 8);
+            moves.push_back(move);
+        }
+        if((startSquare + 1) % 8){
+            if(squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black){
+                Move move(startSquare, startSquare - 7);
+                moves.push_back(move);
             }
         }
-        else {
-            // pawn promotion
+        if(startSquare % 8){
+            if(squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black){
+                Move move(startSquare, startSquare - 9);
+                moves.push_back(move);
+            }
         }
     }
 }

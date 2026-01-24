@@ -10,8 +10,10 @@ class Renderer{
         Texture2D _Pieces[2][7]; //color and which piece (0 is white and 1 is black)
         // mapping same as Type and Color
         int selectedSquare;
+        bool isPromoting;
+        Move pendingMove; //for promotion thing
     public :
-        Renderer() : selectedSquare(-1) {}
+        Renderer() : selectedSquare(-1), isPromoting(false) {}
         ~Renderer() = default;
         void LoadAssets();
         void Draw(const Board& _Board);

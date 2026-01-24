@@ -34,9 +34,64 @@ void Renderer::Draw(const Board& _Board){
                 DrawTexture(_Pieces[(int)_piece.color][(int)_piece.type], file * _Tilesize, row * _Tilesize, WHITE);
         }
     }
+    
+    //menu for promotion (reference taken from chess.com)
+    if(isPromoting){
+        int endSquare = pendingMove.endSquare;
+        //sequence - Queen, knight, rook, Bishop
+        Colors currColor = _Board.GetTurn();
+        int offset = (currColor == Colors::Black ? -1 : 1);
+        int file = endSquare % 8;
+        int row = endSquare / 8;
+
+        DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, GREEN);
+        DrawTexture(_Pieces[(int)currColor][(int)Type::Queen], file * _Tilesize, row * _Tilesize, WHITE);
+
+        row += offset;
+
+        DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, GREEN);
+        DrawTexture(_Pieces[(int)currColor][(int)Type::Knight], file * _Tilesize, row * _Tilesize, WHITE);
+
+        row += offset;
+
+        DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, GREEN);
+        DrawTexture(_Pieces[(int)currColor][(int)Type::Rook], file * _Tilesize, row * _Tilesize, WHITE);
+
+        row += offset;
+
+        DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, GREEN);
+        DrawTexture(_Pieces[(int)currColor][(int)Type::Bishop], file * _Tilesize, row * _Tilesize, WHITE);
+
+    } 
 }
 
 void Renderer::HandleInput(Board& _Board){
+    if(isPromoting){
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){ //got promoted to piece what
+            Vector2 mousePos = GetMousePosition();
+            int x_coor_rect = mousePos.x / _Tilesize;
+            int y_coor_rect = mousePos.y / _Tilesize;
+
+            // logging
+            std::cout << x_coor_rect << " " << y_coor_rect << std::endl;
+            if(x_coor_rect != pendingMove.endSquare % 8){
+                isPromoting = false;
+                selectedSquare = -1;
+                return;
+            }
+            
+            //I only have to use the row number so y_coor_rect
+            if(y_coor_rect == 7 || y_coor_rect == 0) pendingMove.promotionPiece = Type::Queen;
+            else if(y_coor_rect == 6 || y_coor_rect == 1) pendingMove.promotionPiece = Type::Knight;
+            else if(y_coor_rect == 5 || y_coor_rect == 2) pendingMove.promotionPiece = Type::Rook;
+            else if(y_coor_rect == 4 || y_coor_rect == 3) pendingMove.promotionPiece = Type::Bishop;
+
+            _Board.MakeMove(pendingMove);
+            isPromoting = false;
+        }
+        return;
+    }
+
     if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
         //Piece to move
 
@@ -69,7 +124,13 @@ void Renderer::HandleInput(Board& _Board){
                     }
                 }
                 else{
-                    _Board.MakeMove(currMove);
+                    if(currPiece.type == Type::Pawn && (endSquare < 8 || endSquare >= 56)){ //see if promoting or not
+                        isPromoting = true;
+                        pendingMove = currMove;
+                    }
+                    else{ // normal
+                        _Board.MakeMove(currMove);
+                    }
                     selectedSquare = -1;
                 }
             }   
