@@ -352,8 +352,7 @@ void Board::MakeMove(Move move){
 
 /*
     Remaining stuff :
-        Checks
-        discovered check
-        Checkmate check
         Castling
+        enPassant
+        Game Over on CheckMate
 */
