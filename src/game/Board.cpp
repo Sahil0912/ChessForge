@@ -51,6 +51,14 @@ void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> 
     if(color == Colors::Black){
         // Have to move in positive direction
         if(startSquare < 48){
+            // first move 
+            if(startSquare < 16){
+                if(squares[startSquare + 16].type == Type::Empty && squares[startSquare + 8].type == Type::Empty){
+                    Move move(startSquare, startSquare + 16);
+                    moves.push_back(move);
+                }
+            }
+            // after moves
             if(squares[startSquare + 8].type == Type::Empty){
                 Move move(startSquare, startSquare + 8);
                 moves.push_back(move);
@@ -68,10 +76,22 @@ void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> 
                 }
             }
         }
+        else {
+            // pawn promotion
+        }
     }
     else if(color == Colors::White){
         // Have to move in negative direction
         if(startSquare > 15){
+            // first move 
+            if(startSquare > 47){
+                if(squares[startSquare - 16].type == Type::Empty && squares[startSquare - 8].type == Type::Empty){
+                    Move move(startSquare, startSquare - 16);
+                    moves.push_back(move);
+                }
+            }
+            // after moves
+
             if(squares[startSquare - 8].type == Type::Empty){
                 Move move(startSquare, startSquare - 8);
                 moves.push_back(move);
@@ -88,6 +108,9 @@ void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> 
                     moves.push_back(move);
                 }
             }
+        }
+        else {
+            // pawn promotion
         }
     }
 }
@@ -256,7 +279,6 @@ void Board::MakeMove(Move move){
     Remaining stuff :
         Checks
         Pawn Promotion
-        Pawn first 2 steps
         discovered check
         Castling
 */
