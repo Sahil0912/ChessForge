@@ -47,6 +47,58 @@ Colors Board::GetTurn() const {
     return turn;
 }
 
+bool Board::isSquareAttacked(int square, Colors& color){ //attacked by this color or not
+    //to see if this square is attacking which piece
+    Colors oppColor = (Colors)(1 - (int)color);
+    //bishop or queen
+
+    std::vector<std::pair<int, bool>> offsets{{9, true}, {-9, true}, {7, true}, {-7, true}};
+    std::vector<Move> moves;
+    GenerateSlidingMoves(square, oppColor, offsets, moves);
+    for(auto &move : moves){
+        if(squares[move.endSquare].type == Type::Bishop || squares[move.endSquare].type == Type::Queen){
+            return true;
+        }
+    }
+
+    //rook or queen
+
+    moves.clear();
+    offsets = std::vector<std::pair<int, bool>>{{8, true}, {-8, true}, {1, false}, {-1, false}};
+    GenerateSlidingMoves(square, oppColor, offsets, moves);
+    for(auto &move : moves){
+        if(squares[move.endSquare].type == Type::Rook || squares[move.endSquare].type == Type::Queen){
+            return true;
+        }
+    }
+
+    moves.clear();
+    GenerateKnightMoves(square, oppColor, moves);
+    for(auto &move : moves){
+        if(squares[move.endSquare].type == Type::Knight){
+            return true;
+        }
+    }
+
+    moves.clear();
+    GeneratePawnMoves(square, oppColor, moves);
+    for(auto &move : moves){
+        if(squares[move.endSquare].type == Type::Pawn){
+            return true;
+        }
+    }
+
+    moves.clear();
+    GenerateKingMoves(square, oppColor, moves);
+    for(auto &move : moves){
+        if(squares[move.endSquare].type == Type::King){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves){
     if(color == Colors::Black){
         // Have to move in positive direction
@@ -237,6 +289,14 @@ void Board::GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::
     else if(type == Type::King) GenerateKingMoves(startSquare, color, moves);
 }
 
+int Board::findKing(Colors& color){
+    for (int pos = 0; pos < 64; pos++)
+    {
+        if(squares[pos].type == Type::King && squares[pos].color == color) return pos;
+    }
+    
+}
+
 std::vector<Move> Board::GenerateMoves(){
     std::vector<Move> moves;
     for(int i = 0; i < 64; i++){
@@ -244,7 +304,29 @@ std::vector<Move> Board::GenerateMoves(){
             GeneratePieceMoves(i, squares[i].type, squares[i].color, moves);
         }
     }
-    return moves;
+    
+    std::vector<Move> legalMoves;
+    for(auto &move : moves){
+        Piece currStartPiece = squares[move.startSquare];
+        Piece currEndPiece = squares[move.endSquare];
+
+        //setting up for checking
+        squares[move.endSquare] = squares[move.startSquare];
+        squares[move.startSquare] = {Colors::None, Type::Empty};
+
+        //checking
+        int kingPos = findKing(turn);
+        Colors oppTurn = (Colors)(1 - (int)turn);
+        if(!isSquareAttacked(kingPos, oppTurn)){
+            legalMoves.push_back(move);
+        }
+
+        //unset
+        squares[move.endSquare] = currEndPiece;
+        squares[move.startSquare] = currStartPiece;
+
+    }
+    return legalMoves;
 }
 
 void Board::MakeMove(Move move){
@@ -271,7 +353,7 @@ void Board::MakeMove(Move move){
 /*
     Remaining stuff :
         Checks
-        Pawn Promotion
         discovered check
+        Checkmate check
         Castling
 */
