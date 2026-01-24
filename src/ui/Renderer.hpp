@@ -16,7 +16,7 @@ class Renderer{
         Renderer() : selectedSquare(-1), isPromoting(false) {}
         ~Renderer() = default;
         void LoadAssets();
-        void Draw(const Board& _Board);
+        void Draw(Board& _Board);
         void HandleInput(Board& _Board);
         void UnloadAssets();
 };

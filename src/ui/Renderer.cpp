@@ -25,7 +25,7 @@ void Renderer::UnloadAssets(){
     }
     
 }
-void Renderer::Draw(const Board& _Board){
+void Renderer::Draw(Board& _Board){
     for(int file = 0; file < 8; file++){
         for(int row = 0; row < 8; row++){
             DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
@@ -61,8 +61,33 @@ void Renderer::Draw(const Board& _Board){
 
         DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, GREEN);
         DrawTexture(_Pieces[(int)currColor][(int)Type::Bishop], file * _Tilesize, row * _Tilesize, WHITE);
-
+        return;
     } 
+    if(selectedSquare != -1){
+        std::vector<Move> moves = _Board.GenerateMoves();
+        for(auto &move : moves){
+            if(move.startSquare == selectedSquare){
+                int file = move.endSquare % 8;
+                int rank = move.endSquare / 8;
+                int center_x = file * _Tilesize + _Tilesize/2;
+                int center_y = rank * _Tilesize + _Tilesize/2;
+                if(_Board.GetPiece(move.endSquare).type == Type::Empty){
+                    //a dot
+                    DrawCircle(center_x, center_y, _Tilesize*0.15, Fade(DARKGRAY, 0.5f));
+                }
+                else{
+                    float outerRadius = _Tilesize * 0.45f;
+                    float innerRadius = _Tilesize * 0.40f; 
+                    
+                    DrawRing(
+                        (Vector2){(float)center_x, (float)center_y}, 
+                        innerRadius, outerRadius, 0.0f, 360.0f, 32, Fade(DARKGRAY, 0.5f)
+                    );
+                }
+            }
+        }
+    }
+
 }
 
 void Renderer::HandleInput(Board& _Board){
