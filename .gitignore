@@ -9,3 +9,4 @@ Makefile
 compile_commands.json
 *.o
 .vscode/
+.github/
