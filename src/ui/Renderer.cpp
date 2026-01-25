@@ -26,6 +26,10 @@ void Renderer::UnloadAssets(){
     
 }
 void Renderer::Draw(Board& _Board){
+
+    GameState state = _Board.GetState();
+    
+
     for(int file = 0; file < 8; file++){
         for(int row = 0; row < 8; row++){
             DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
@@ -87,10 +91,49 @@ void Renderer::Draw(Board& _Board){
             }
         }
     }
+    if(state != GameState::Playing){
+        DrawRectangle(0, 0, _Tilesize * 8, _Tilesize * 8, Fade(BLACK, 0.7f));
+        const char* message = "";
+        switch (state)
+        {
+            case GameState::BlackWin:
+                message = "Black Won!!!";
+                break;
+            
+            case GameState::WhiteWin:
+                message = "White Won!!!";
+                break;
+            
+            case GameState::Draw:
+                message = "Draw!!!";
+                break;
+            
+            default:
+                break;
+        }
+        int fontSize = 60;
+        int textWidth = MeasureText(message, fontSize);
+        int x = (_Tilesize * 8 - textWidth) / 2;
+        int y = (_Tilesize * 8 - fontSize) / 2;
 
+        DrawText(message, x, y, fontSize, WHITE);
+
+        const char* restartMessage = "Press R to Restart";
+        textWidth = MeasureText(restartMessage, 30);
+        DrawText(restartMessage, (_Tilesize * 8 - textWidth)/2, y + 80, 30, LIGHTGRAY);
+    }
 }
 
 void Renderer::HandleInput(Board& _Board){
+
+    if(_Board.GetState() != GameState::Playing){
+        if(IsKeyPressed(KEY_R)){
+            _Board.Initialize();
+            isPromoting = false; 
+        }
+        return;
+    }
+
     if(isPromoting){
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){ //got promoted to piece what
             Vector2 mousePos = GetMousePosition();

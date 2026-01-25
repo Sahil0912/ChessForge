@@ -38,7 +38,7 @@ void Board::Initialize(){
     squares[60].type = Type::King;
 
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
-    
+    gameState = GameState::Playing;
 }
 
 Piece Board::GetPiece(int index) const {
@@ -47,6 +47,10 @@ Piece Board::GetPiece(int index) const {
 
 Colors Board::GetTurn() const {
     return turn;
+}
+
+GameState Board::GetState() const{
+    return gameState;
 }
 
 bool Board::isSquareAttacked(int square, Colors& color){ //attacked by this color or not
@@ -357,6 +361,15 @@ std::vector<Move> Board::GenerateMoves(){
             }
         }
     }
+    if(legalMoves.empty()){
+        if(isSquareAttacked(findKing(turn), oppTurn)){
+            if(turn == Colors::Black) gameState = GameState::WhiteWin;
+            else if(turn == Colors::White) gameState = GameState::BlackWin;
+        }
+        else{
+            gameState = GameState::Draw;
+        }
+    }
     return legalMoves;
 }
 
@@ -413,12 +426,12 @@ void Board::MakeMove(Move move){
         squares[startSquare].color = Colors::None;
     }
     turn = (Colors)(1 - (int)turn);
+    GenerateMoves();
 }
 
 
 /*
     Remaining stuff :
-        Castling
         enPassant
         Game Over on CheckMate/StaleMate
 */

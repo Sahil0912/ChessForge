@@ -3,11 +3,17 @@
 #include "Move.hpp"
 #include <array>
 #include <vector>
+
+enum class GameState{
+    Playing, WhiteWin, BlackWin, Draw
+};
+
 class Board
 {
 private:
     std::array<Piece, 64> squares; // 0 ->a8 and 63 -> h1
     Colors turn;
+    GameState gameState;
     bool whiteCastleKingSide, whiteCastleQueenSide, blackCastleKingSide, blackCastleQueenSide; 
     void GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GenerateKnightMoves(int startSquare, Colors& color, std::vector<Move> &moves);
@@ -25,6 +31,7 @@ public:
     ~Board() = default;
 
     void Initialize();
+    GameState GetState() const;
     Piece GetPiece(int index) const;
     Colors GetTurn() const;
     std::vector<Move> GenerateMoves();
