@@ -12,9 +12,10 @@ class Board
 {
 private:
     std::array<Piece, 64> squares; // 0 ->a8 and 63 -> h1
-    Colors turn;
-    GameState gameState;
-    bool whiteCastleKingSide, whiteCastleQueenSide, blackCastleKingSide, blackCastleQueenSide; 
+    Colors turn = Colors::White;
+    GameState gameState = GameState::Playing;
+    bool whiteCastleKingSide = true, whiteCastleQueenSide = true, blackCastleKingSide = true, blackCastleQueenSide = true; 
+    int enPassantSquare = -1;
     void GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GenerateKnightMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GenerateBishopMoves(int startSquare, Colors& color, std::vector<Move> &moves);

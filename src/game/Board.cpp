@@ -39,6 +39,7 @@ void Board::Initialize(){
 
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
     gameState = GameState::Playing;
+    enPassantSquare = -1;
 }
 
 Piece Board::GetPiece(int index) const {
@@ -122,13 +123,13 @@ void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> 
             moves.push_back(move);
         }
         if((startSquare + 1) % 8){
-            if(squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White){
+            if(enPassantSquare == startSquare + 9 || (squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White)){
                 Move move(startSquare, startSquare + 9);
                 moves.push_back(move);
             }
         }
         if(startSquare % 8){
-            if(squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White){
+            if(enPassantSquare == startSquare + 7 || (squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White)){
                 Move move(startSquare, startSquare + 7);
                 moves.push_back(move);
             }
@@ -152,13 +153,13 @@ void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> 
             moves.push_back(move);
         }
         if((startSquare + 1) % 8){
-            if(squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black){
+            if(enPassantSquare == startSquare - 7 || (squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black)){
                 Move move(startSquare, startSquare - 7);
                 moves.push_back(move);
             }
         }
         if(startSquare % 8){
-            if(squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black){
+            if(enPassantSquare == startSquare - 9 || (squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black)){
                 Move move(startSquare, startSquare - 9);
                 moves.push_back(move);
             }
@@ -374,6 +375,10 @@ std::vector<Move> Board::GenerateMoves(){
 }
 
 void Board::MakeMove(Move move){
+
+    //making sure enPassant remains for only 1 turn
+    enPassantSquare = -1;
+
     // assuming its valid
     int startSquare = move.startSquare;
     
@@ -414,6 +419,35 @@ void Board::MakeMove(Move move){
         squares[oldRookSquare].color = Colors::None;
     }
     else{
+        if(squares[startSquare].type == Type::Pawn){
+            if(turn == Colors::Black){
+
+                //for setting up enPassant sq
+                if(startSquare < 16 && endSquare == startSquare + 16){
+                    enPassantSquare = startSquare + 8;
+                }
+
+                //for detecting if other player took the pawn using enPassant
+                if((endSquare == startSquare + 7 || endSquare == startSquare + 9) && squares[endSquare].type == Type::Empty){
+                    squares[endSquare - 8].type = Type::Empty;
+                    squares[endSquare - 8].color = Colors::None;
+                }
+            } 
+            else if(turn == Colors::White){
+
+                //for setting up enPassant sq
+                if(startSquare >= 48 && endSquare == startSquare - 16){
+                    enPassantSquare = startSquare - 8;
+                }
+
+                //for detecting if other player took the pawn using enPassant
+                if((endSquare == startSquare - 7 || endSquare == startSquare - 9) && squares[endSquare].type == Type::Empty){
+                    squares[endSquare + 8].type = Type::Empty;
+                    squares[endSquare + 8].color = Colors::None;
+                }
+            }
+        }
+
         if(move.promotionPiece != Type::Empty){
             squares[endSquare].type = move.promotionPiece;
         }
@@ -424,6 +458,7 @@ void Board::MakeMove(Move move){
 
         squares[startSquare].type = Type::Empty;
         squares[startSquare].color = Colors::None;
+
     }
     turn = (Colors)(1 - (int)turn);
     GenerateMoves();
@@ -433,5 +468,4 @@ void Board::MakeMove(Move move){
 /*
     Remaining stuff :
         enPassant
-        Game Over on CheckMate/StaleMate
 */
