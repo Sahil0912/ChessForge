@@ -496,9 +496,3 @@ void Board::MakeMove(Move move){
     turn = (Colors)(1 - (int)turn);
     GenerateMoves();
 }
-
-
-/*
-    Remaining stuff :
-        enPassant
-*/
