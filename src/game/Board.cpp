@@ -36,6 +36,8 @@ void Board::Initialize(){
     squares[58].type = squares[61].type = Type::Bishop;
     squares[59].type = Type::Queen;
     squares[60].type = Type::King;
+
+    whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
     
 }
 
@@ -304,6 +306,7 @@ std::vector<Move> Board::GenerateMoves(){
             GeneratePieceMoves(i, squares[i].type, squares[i].color, moves);
         }
     }
+    Colors oppTurn = (Colors)(1 - (int)turn);
     
     std::vector<Move> legalMoves;
     for(auto &move : moves){
@@ -316,7 +319,7 @@ std::vector<Move> Board::GenerateMoves(){
 
         //checking
         int kingPos = findKing(turn);
-        Colors oppTurn = (Colors)(1 - (int)turn);
+        
         if(!isSquareAttacked(kingPos, oppTurn)){
             legalMoves.push_back(move);
         }
@@ -326,6 +329,34 @@ std::vector<Move> Board::GenerateMoves(){
         squares[move.startSquare] = currStartPiece;
 
     }
+    if(turn == Colors::White){
+        if(whiteCastleKingSide){
+            if(squares[61].type == Type::Empty && squares[62].type == Type::Empty && !isSquareAttacked(60, oppTurn) && !isSquareAttacked(61, oppTurn) && !isSquareAttacked(62, oppTurn)){
+                Move move(60, 62, 63, 61, true);
+                legalMoves.push_back(move);
+            }
+        }
+        if(whiteCastleQueenSide){
+            if(squares[57].type == Type::Empty && squares[58].type == Type::Empty && squares[59].type == Type::Empty && !isSquareAttacked(60, oppTurn) && !isSquareAttacked(59, oppTurn) && !isSquareAttacked(58, oppTurn)){
+                Move move(60, 58, 56, 59, true);
+                legalMoves.push_back(move);
+            }
+        }
+    }
+    else if(turn == Colors::Black){
+        if(blackCastleKingSide){
+            if(squares[5].type == Type::Empty && squares[6].type == Type::Empty && !isSquareAttacked(4, oppTurn) && !isSquareAttacked(5, oppTurn) && !isSquareAttacked(6, oppTurn)){
+                Move move(4, 6, 7, 5, true);
+                legalMoves.push_back(move);
+            }
+        }
+        if(blackCastleQueenSide){
+            if(squares[1].type == Type::Empty && squares[2].type == Type::Empty && squares[3].type == Type::Empty && !isSquareAttacked(4, oppTurn) && !isSquareAttacked(3, oppTurn) && !isSquareAttacked(2, oppTurn)){
+                Move move(4, 2, 0, 3, true);
+                legalMoves.push_back(move);
+            }
+        }
+    }
     return legalMoves;
 }
 
@@ -334,18 +365,53 @@ void Board::MakeMove(Move move){
     int startSquare = move.startSquare;
     
     int endSquare = move.endSquare;
+    int oldRookSquare = move.oldRookSquare;
+    int newRookSquare = move.newRookSquare;
+    
+    bool isCastle = move.isCastling;
 
-    if(move.promotionPiece != Type::Empty){
-        squares[endSquare].type = move.promotionPiece;
+    //setting up castling flags
+    if(whiteCastleKingSide){
+        if(startSquare == 63 || endSquare == 63 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King)){
+            whiteCastleKingSide = false;
+        }
     }
-    else {
-        squares[endSquare].type = squares[startSquare].type;
+    if(whiteCastleQueenSide){
+        if(startSquare == 56 || endSquare == 56 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King)){
+            whiteCastleQueenSide = false;
+        }
     }
-    squares[endSquare].color = squares[startSquare].color;
+    if(blackCastleKingSide){
+        if(startSquare == 7 || endSquare == 7 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King)){
+            blackCastleKingSide = false;
+        }
+    }
+    if(blackCastleQueenSide){
+        if(startSquare == 0 || endSquare == 0 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King)){
+            blackCastleQueenSide = false;
+        }
+    }
+    if(isCastle){
+        squares[endSquare] = squares[startSquare];
+        squares[newRookSquare] = squares[oldRookSquare];
+        
+        squares[startSquare].type = Type::Empty;
+        squares[startSquare].color = Colors::None;
+        squares[oldRookSquare].type = Type::Empty;
+        squares[oldRookSquare].color = Colors::None;
+    }
+    else{
+        if(move.promotionPiece != Type::Empty){
+            squares[endSquare].type = move.promotionPiece;
+        }
+        else {
+            squares[endSquare].type = squares[startSquare].type;
+        }
+        squares[endSquare].color = squares[startSquare].color;
 
-    squares[startSquare].type = Type::Empty;
-    squares[startSquare].color = Colors::None;
-
+        squares[startSquare].type = Type::Empty;
+        squares[startSquare].color = Colors::None;
+    }
     turn = (Colors)(1 - (int)turn);
 }
 
@@ -354,5 +420,5 @@ void Board::MakeMove(Move move){
     Remaining stuff :
         Castling
         enPassant
-        Game Over on CheckMate
+        Game Over on CheckMate/StaleMate
 */

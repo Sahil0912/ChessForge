@@ -8,6 +8,7 @@ class Board
 private:
     std::array<Piece, 64> squares; // 0 ->a8 and 63 -> h1
     Colors turn;
+    bool whiteCastleKingSide, whiteCastleQueenSide, blackCastleKingSide, blackCastleQueenSide; 
     void GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GenerateKnightMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GenerateBishopMoves(int startSquare, Colors& color, std::vector<Move> &moves);

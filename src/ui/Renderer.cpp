@@ -138,7 +138,10 @@ void Renderer::HandleInput(Board& _Board){
                 int endSquare = y_coor_rect * 8 + x_coor_rect;
                 std::vector<Move> moves = _Board.GenerateMoves();
                 Move currMove(selectedSquare, endSquare);
-                auto findIterator = std::find(moves.begin(), moves.end(), currMove);
+                // auto findIterator = std::find(moves.begin(), moves.end(), currMove); // will no longer work as we can check castrling only with start and end
+                auto findIterator = std::find_if(moves.begin(), moves.end(), [&](const Move& m) {
+                    return m.startSquare == selectedSquare && m.endSquare == endSquare;
+                });
                 if(findIterator == moves.end()){
                     const Piece endPiece = _Board.GetPiece(endSquare);
                     if(endPiece.color == currPiece.color){
@@ -151,10 +154,10 @@ void Renderer::HandleInput(Board& _Board){
                 else{
                     if(currPiece.type == Type::Pawn && (endSquare < 8 || endSquare >= 56)){ //see if promoting or not
                         isPromoting = true;
-                        pendingMove = currMove;
+                        pendingMove = *findIterator;
                     }
                     else{ // normal
-                        _Board.MakeMove(currMove);
+                        _Board.MakeMove(*findIterator);
                     }
                     selectedSquare = -1;
                 }
