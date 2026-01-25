@@ -23,7 +23,7 @@ private:
     void GenerateKingMoves(int startSquare, Colors& color, std::vector<Move> &moves);
     void GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::vector<Move> &moves);
     void GenerateSlidingMoves(int startSquare, Colors& color, std::vector<std::pair<int, bool>> &offsets, std::vector<Move> &moves);
-    bool isSquareAttacked(int square, Colors& color);
+    
     int findKing(Colors& color);
 
 public:
@@ -35,6 +35,7 @@ public:
     Piece GetPiece(int index) const;
     Colors GetTurn() const;
     std::vector<Move> GenerateMoves();
+    bool isSquareAttacked(int square, Colors& color);
     void MakeMove(Move move);
 };
 

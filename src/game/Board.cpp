@@ -53,7 +53,7 @@ GameState Board::GetState() const{
     return gameState;
 }
 
-bool Board::isSquareAttacked(int square, Colors& color){ //attacked by this color or not
+bool Board::isSquareAttacked(int square, Colors& color) { //attacked by this color or not
     //to see if this square is attacking which piece
     Colors oppColor = (Colors)(1 - (int)color);
     //bishop or queen

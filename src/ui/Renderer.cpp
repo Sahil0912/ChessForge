@@ -34,6 +34,13 @@ void Renderer::Draw(Board& _Board){
         for(int row = 0; row < 8; row++){
             DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
             Piece _piece = _Board.GetPiece(row * 8 + file);
+            if(_piece.color == _Board.GetTurn() && _piece.type == Type::King){
+                Colors oppColor = (Colors)(1 - (int)_Board.GetTurn());
+                if(_Board.isSquareAttacked(row * 8 + file, oppColor)){
+                     DrawRectangleGradientV(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, Fade(RED, 0.0f), Fade(RED, 0.8f));
+                     
+                }
+            }
             if(_piece.type != Type::Empty)
                 DrawTexture(_Pieces[(int)_piece.color][(int)_piece.type], file * _Tilesize, row * _Tilesize, WHITE);
         }
