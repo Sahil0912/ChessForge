@@ -318,6 +318,39 @@ std::vector<Move> Board::GenerateMoves(){
         Piece currStartPiece = squares[move.startSquare];
         Piece currEndPiece = squares[move.endSquare];
 
+        // checking for pawn enPassant in diff case (doing here because say the king is in check with the previous pawn which can be taken using enPassant)
+        //so if I check the logic here the move will validate and if I would have checked the logic only in the makeMove part it would have never reached there in the firt place
+        if(enPassantSquare != -1 && (currStartPiece.type == Type::Pawn && currEndPiece.type == Type::Empty && (move.endSquare - move.startSquare) % 8)){
+            //setting up for checking
+            squares[move.endSquare] = squares[move.startSquare];
+            squares[move.startSquare] = {Colors::None, Type::Empty};
+            if(turn == Colors::White){
+                squares[move.endSquare + 8] = {Colors::None, Type::Empty};
+            }
+            else if(turn == Colors::Black){
+                squares[move.endSquare - 8] = {Colors::None, Type::Empty};
+            }
+
+            //checking
+            int kingPos = findKing(turn);
+        
+            if(!isSquareAttacked(kingPos, oppTurn)){
+                legalMoves.push_back(move);
+            }
+
+            //unsetting
+            squares[move.endSquare] = currEndPiece;
+            squares[move.startSquare] = currStartPiece;
+
+            if(turn == Colors::White){
+                squares[move.endSquare + 8] = {Colors::Black, Type::Pawn};
+            }
+            else if(turn == Colors::Black){
+                squares[move.endSquare - 8] = {Colors::White, Type::Pawn};
+            }
+            continue;
+        }
+
         //setting up for checking
         squares[move.endSquare] = squares[move.startSquare];
         squares[move.startSquare] = {Colors::None, Type::Empty};
