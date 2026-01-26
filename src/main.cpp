@@ -13,12 +13,13 @@ int main(){
     Renderer _Renderer;
     _Renderer.LoadAssets();
     SetTargetFPS(60);
+    int stateOfApp = 0; // 0 - Menu, 1 - pVp, 2 - pVstockfish 
     while (!WindowShouldClose())
     {
-        _Renderer.HandleInput(_Board);
+        _Renderer.HandleInput(_Board, stateOfApp);
 
         BeginDrawing();
-        _Renderer.Draw(_Board);
+        _Renderer.Draw(_Board, stateOfApp);
         EndDrawing();
     }
     

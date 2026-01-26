@@ -25,7 +25,41 @@ void Renderer::UnloadAssets(){
     }
     
 }
-void Renderer::Draw(Board& _Board){
+void Renderer::Draw(Board& _Board, int stateOfApp){
+
+// for menu state
+    if(stateOfApp == 0){
+        ClearBackground(Color{30, 30, 30, 255});
+
+        const char* title = "CHESS FORGE";
+        int fontSize = 80;
+        int titleWidth = MeasureText(title, fontSize);
+        DrawText(title, (1000 - titleWidth) / 2, 200, fontSize, WHITE);
+
+        Rectangle pVp = {300, 450, 400, 80}; 
+        
+        Vector2 mouse = GetMousePosition();
+        bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
+        DrawRectangleRec(pVp, hoverPvP ? LIGHTGRAY : GRAY);
+        
+        const char* pvpText = "Player vs Player";
+        int btnTextSize = 30;
+        int pvpTextWidth = MeasureText(pvpText, btnTextSize);
+        DrawText(pvpText, pVp.x + (pVp.width - pvpTextWidth)/2, pVp.y + (pVp.height - btnTextSize)/2, btnTextSize, BLACK);
+
+        Rectangle pVstockfish = {300, 580, 400, 80};
+        
+        bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
+        DrawRectangleRec(pVstockfish, hoverpVstockfish ? LIGHTGRAY : GRAY);
+        
+        const char* cpuText = "Player vs Stockfish";
+        int cpuTextWidth = MeasureText(cpuText, btnTextSize);
+        DrawText(cpuText, pVstockfish.x + (pVstockfish.width - cpuTextWidth)/2, pVstockfish.y + (pVstockfish.height - btnTextSize)/2, btnTextSize, BLACK);
+
+        return;
+    }
+
+//for default pVp state
 
     GameState state = _Board.GetState();
     
@@ -132,7 +166,39 @@ void Renderer::Draw(Board& _Board){
 }
 
 void Renderer::HandleInput(Board& _Board){
+    int state = 1;
+    HandleInput(_Board, state);
+}
 
+void Renderer::HandleInput(Board& _Board, int &stateOfApp){
+
+// for menu state
+    if(stateOfApp == 0){
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            Rectangle pVp = {300, 450, 400, 80}; 
+            Rectangle pVstockfish = {300, 580, 400, 80};
+
+            Vector2 mouse = GetMousePosition();
+            
+            bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
+            bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
+            
+            if(hoverPvP){
+                stateOfApp = 1;
+                
+                return;
+            }
+            else if(hoverpVstockfish){
+                stateOfApp = 2;
+
+                return;
+            }
+
+        }
+        return;
+    }
+
+//for default pVp state
     if(_Board.GetState() != GameState::Playing){
         if(IsKeyPressed(KEY_R)){
             _Board.Initialize();
