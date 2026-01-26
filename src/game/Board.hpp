@@ -3,6 +3,7 @@
 #include "Move.hpp"
 #include <array>
 #include <vector>
+#include <string>
 
 enum class GameState{
     Playing, WhiteWin, BlackWin, Draw
@@ -38,6 +39,8 @@ public:
     std::vector<Move> GenerateMoves();
     bool isSquareAttacked(int square, Colors& color);
     void MakeMove(Move move);
+    static std::string IndexToSquare(int index);
+    static int SquareToIndex(std::string square);
 };
 
 

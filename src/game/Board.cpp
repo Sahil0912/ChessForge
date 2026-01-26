@@ -496,3 +496,20 @@ void Board::MakeMove(Move move){
     turn = (Colors)(1 - (int)turn);
     GenerateMoves();
 }
+
+
+std::string Board::IndexToSquare(int index){
+    int file = index % 8;
+    int row = 8 - index / 8;
+    std::string square = "";
+    square += (char)(file + 'a');
+    square += (char)(row + '0'); 
+    return square;
+}
+
+int Board::SquareToIndex(std::string square){
+    int file = (square[0] - 'a');
+    int row = 8 - (square[1] - '0');
+    int index = row * 8 + file;
+    return index;
+}
