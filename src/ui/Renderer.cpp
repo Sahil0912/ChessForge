@@ -197,6 +197,10 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
         }
         return;
     }
+    // in pVstockfish and its engine turn
+    if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
+        return; 
+    }
 
 //for default pVp state
     if(_Board.GetState() != GameState::Playing){
