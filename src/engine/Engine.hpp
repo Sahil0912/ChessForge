@@ -21,7 +21,7 @@ class Engine{
     public : 
         Engine();
         ~Engine();
-        void Start(const char* path = "stockfish");
+        void Start(const char* path = "/usr/bin/stockfish");
         void WriteInteract(std::string command); //user gives stockfish commands
         std::string GetBestMove();//give us the parsed bestmove
 };
