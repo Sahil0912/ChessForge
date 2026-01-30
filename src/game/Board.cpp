@@ -40,6 +40,7 @@ void Board::Initialize(){
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
     gameState = GameState::Playing;
     enPassantSquare = -1;
+    history.clear();
 }
 
 Piece Board::GetPiece(int index) const {

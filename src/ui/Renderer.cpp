@@ -206,6 +206,7 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
     if(_Board.GetState() != GameState::Playing){
         if(IsKeyPressed(KEY_R)){
             _Board.Initialize();
+            stateOfApp = 0;
             isPromoting = false; 
         }
         return;
