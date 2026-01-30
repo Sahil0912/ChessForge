@@ -172,6 +172,11 @@ void Renderer::HandleInput(Board& _Board){
 
 void Renderer::HandleInput(Board& _Board, int &stateOfApp){
 
+    // in pVstockfish and its engine turn
+    if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
+        return; 
+    }
+
 // for menu state
     if(stateOfApp == 0){
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
@@ -197,10 +202,7 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
         }
         return;
     }
-    // in pVstockfish and its engine turn
-    if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
-        return; 
-    }
+    
 
 //for default pVp state
     if(_Board.GetState() != GameState::Playing){
