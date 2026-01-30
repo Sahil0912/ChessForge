@@ -32,6 +32,7 @@ public:
     Board() = default;
     ~Board() = default;
 
+    std::vector <Move> history;
     void Initialize();
     GameState GetState() const;
     Piece GetPiece(int index) const;
@@ -41,6 +42,8 @@ public:
     void MakeMove(Move move);
     static std::string IndexToSquare(int index);
     static int SquareToIndex(std::string square);
+    static Move UciToMove(std::string uci);
+    static std::string MoveToUci(Move move);
 };
 
 
