@@ -16,10 +16,10 @@ The project is organized into the following directories:
 - **CMakeLists.txt**: Configuration file for building the project with CMake.
 
 ## Setup Instructions (Linux only)
-1. Ensure you have CMake and raylib installed on your system.
-   - For Arch based Distros : 
+1. Ensure you have CMake, raylib and stockfish installed on your system.
+   - For Arch based Distros (in case the package is not in pacman use yay or paru): 
       ```
-      sudo pacman -S raylib cmake
+      sudo pacman -S raylib cmake stockfish
       ```
 
 2. Clone the repository or download the project files.
