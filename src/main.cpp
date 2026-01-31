@@ -20,6 +20,13 @@ int main(){
     bool engineOn = false;
     while (!WindowShouldClose())
     {
+        //crash prevent for stockfish restart
+        if(IsKeyPressed(KEY_R)){
+            moveHistory.clear();
+            engineOn = false;
+            stockfish = Engine();
+        }
+
         if(stateOfApp == 2 && !engineOn){
             engineOn = true;
             moveHistory.clear();
