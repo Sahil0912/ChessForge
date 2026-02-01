@@ -15,16 +15,27 @@ void Renderer::LoadAssets(){
     _Pieces[(int)Colors::Black][(int)Type::Rook] = LoadTexture("assets/black-rook.png");
     _Pieces[(int)Colors::Black][(int)Type::Queen] = LoadTexture("assets/black-queen.png");
     _Pieces[(int)Colors::Black][(int)Type::King] = LoadTexture("assets/black-king.png");
-
+    InitAudioDevice();
+    moveSelf = LoadSound("assets/sounds/move-self.mp3");
+    moveCheck = LoadSound("assets/sounds/move-check.mp3");
+    capture = LoadSound("assets/sounds/capture.mp3");
+    castle = LoadSound("assets/sounds/castle.mp3");
 }
+
 void Renderer::UnloadAssets(){
     for(int c = 0; c < 2; c++){
         for(int t = 1; t < 7; t++){
             UnloadTexture(_Pieces[c][t]);
         }
     }
-    
+    UnloadSound(moveSelf);
+    UnloadSound(moveCheck);
+    UnloadSound(capture);
+    UnloadSound(castle);
+    CloseAudioDevice();
+
 }
+
 void Renderer::Draw(Board& _Board, int stateOfApp){
 
 // for menu state
@@ -234,7 +245,11 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
             else if(y_coor_rect == 5 || y_coor_rect == 2) pendingMove.promotionPiece = Type::Rook;
             else if(y_coor_rect == 4 || y_coor_rect == 3) pendingMove.promotionPiece = Type::Bishop;
 
+            bool isCapture = (_Board.GetPiece(pendingMove.endSquare).type != Type::Empty);
+            bool isCastle = (_Board.GetPiece(pendingMove.startSquare).type == Type::King && abs(pendingMove.startSquare - pendingMove.endSquare) == 2);
+
             _Board.MakeMove(pendingMove);
+            PlaySounds(_Board, isCapture, isCastle);
             isPromoting = false;
         }
         return;
@@ -280,7 +295,12 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
                         pendingMove = *findIterator;
                     }
                     else{ // normal
-                        _Board.MakeMove(*findIterator);
+                        Move currmove = *findIterator;
+                        bool isCapture = (_Board.GetPiece(currmove.endSquare).type != Type::Empty);
+                        bool isCastle = (_Board.GetPiece(currmove.startSquare).type == Type::King && abs(currmove.startSquare - currmove.endSquare) == 2);
+
+                        _Board.MakeMove(currmove);
+                        PlaySounds(_Board, isCapture, isCastle);
                     }
                     selectedSquare = -1;
                 }
@@ -298,4 +318,17 @@ void Renderer::HandleInput(Board& _Board, int &stateOfApp){
         }
     }
     
+}
+
+void Renderer::PlaySounds(Board& _Board, bool isCapture, bool isCastle){
+
+
+    Colors turn = _Board.GetTurn();
+    Colors oppColor = (Colors)(1 - (int)turn);
+    bool isCheck = _Board.isSquareAttacked(_Board.findKing(turn), oppColor);
+
+    if (isCheck) PlaySound(moveCheck);
+    else if (isCastle) PlaySound(castle);
+    else if (isCapture) PlaySound(capture);
+    else PlaySound(moveSelf);
 }

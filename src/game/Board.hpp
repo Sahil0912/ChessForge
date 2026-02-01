@@ -26,12 +26,12 @@ private:
     void GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::vector<Move> &moves);
     void GenerateSlidingMoves(int startSquare, Colors& color, std::vector<std::pair<int, bool>> &offsets, std::vector<Move> &moves);
     
-    int findKing(Colors& color);
+    
 
 public:
     Board() = default;
     ~Board() = default;
-
+    int findKing(Colors& color);
     std::vector <Move> history;
     void Initialize();
     GameState GetState() const;

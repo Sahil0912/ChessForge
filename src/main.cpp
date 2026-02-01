@@ -52,9 +52,20 @@ int main(){
                 std::string bestMove = stockfish.GetBestMove();
                 if(!bestMove.empty()){
                     Move engineMove = Board::UciToMove(bestMove);
+                    bool isCapture = (_Board.GetPiece(engineMove.endSquare).type != Type::Empty);
+                    bool isCastle = (_Board.GetPiece(engineMove.startSquare).type == Type::King && abs(engineMove.startSquare - engineMove.endSquare) == 2);
+
+
                     _Board.MakeMove(engineMove);
                     moveHistory.push_back(bestMove);
+                    Colors turn = _Board.GetTurn();
+                    Colors oppColor = (Colors)(1 - (int)turn);
+                    bool isCheck = _Board.isSquareAttacked(_Board.findKing(turn), oppColor);
 
+                    if (isCheck) PlaySound(_Renderer.moveCheck);
+                    else if (isCastle) PlaySound(_Renderer.castle);
+                    else if (isCapture) PlaySound(_Renderer.capture);
+                    else PlaySound(_Renderer.moveSelf);
                     //curr engine move draw
                     BeginDrawing();
                     _Renderer.Draw(_Board, stateOfApp);
