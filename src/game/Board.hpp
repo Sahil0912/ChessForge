@@ -42,7 +42,7 @@ public:
     void MakeMove(Move move);
     static std::string IndexToSquare(int index);
     static int SquareToIndex(std::string square);
-    static Move UciToMove(std::string uci);
+    static Move UciToMove(std::string uci, Board &_Board);
     static std::string MoveToUci(Move move);
 };
 

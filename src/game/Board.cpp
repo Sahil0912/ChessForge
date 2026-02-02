@@ -516,7 +516,7 @@ int Board::SquareToIndex(std::string square){
     return index;
 }
 
-Move Board::UciToMove(std::string uci){
+Move Board::UciToMove(std::string uci, Board& _Board){
     //will be square1 + square2
     std::string square1 = ""; 
     square1 += uci[0];
@@ -535,6 +535,17 @@ Move Board::UciToMove(std::string uci){
         else if(uci[4] == 'r') move.promotionPiece = Type::Rook;
         else if(uci[4] == 'b') move.promotionPiece = Type::Bishop;
         else if(uci[4] == 'n') move.promotionPiece = Type::Knight; 
+    }
+    if(_Board.squares[move.startSquare].type == Type::King && abs(move.startSquare - move.endSquare) == 2){
+        move.isCastling = true;
+        if(index1 < index2){
+            move.oldRookSquare = index2 + 1;
+            move.newRookSquare = index1 + 1;
+        }
+        else{
+            move.oldRookSquare = index2 - 2;
+            move.newRookSquare = index1 - 1;
+        }
     }
     return move;    
 }

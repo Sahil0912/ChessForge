@@ -51,11 +51,11 @@ int main(){
                 stockfish.WriteInteract("go movetime 1000"); //wait for 1sec
                 std::string bestMove = stockfish.GetBestMove();
                 if(!bestMove.empty()){
-                    Move engineMove = Board::UciToMove(bestMove);
+                    Move engineMove = Board::UciToMove(bestMove, _Board);
                     bool isCapture = (_Board.GetPiece(engineMove.endSquare).type != Type::Empty);
                     bool isCastle = (_Board.GetPiece(engineMove.startSquare).type == Type::King && abs(engineMove.startSquare - engineMove.endSquare) == 2);
 
-
+                    // if(isCastle) engineMove.isCastling = true;
                     _Board.MakeMove(engineMove);
                     moveHistory.push_back(bestMove);
                     Colors turn = _Board.GetTurn();
