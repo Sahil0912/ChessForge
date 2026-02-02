@@ -71,13 +71,30 @@ void Renderer::Draw(Board& _Board, int stateOfApp){
     }
 
 //for default pVp state
+    ClearBackground(WHITE); 
 
     GameState state = _Board.GetState();
-    
+
+    int startFile = -1, startRank = -1, endFile = -1, endRank = -1;
+    Color yellowTransparent = { 255, 255, 0, 100 };
+
+    if (!_Board.history.empty()) {
+        Move lastMove = _Board.history.back();
+        
+        startFile = lastMove.startSquare % 8;
+        startRank = lastMove.startSquare / 8;
+        endFile = lastMove.endSquare % 8;
+        endRank = lastMove.endSquare / 8;
+    }
 
     for(int file = 0; file < 8; file++){
         for(int row = 0; row < 8; row++){
-            DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
+
+            if(std::make_pair(startFile, startRank) != std::make_pair(file, row) && std::make_pair(endFile, endRank) != std::make_pair(file, row))
+                DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
+            else
+                DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, yellowTransparent);
+
             Piece _piece = _Board.GetPiece(row * 8 + file);
             if(_piece.color == _Board.GetTurn() && _piece.type == Type::King){
                 Colors oppColor = (Colors)(1 - (int)_Board.GetTurn());
@@ -90,6 +107,8 @@ void Renderer::Draw(Board& _Board, int stateOfApp){
                 DrawTexture(_Pieces[(int)_piece.color][(int)_piece.type], file * _Tilesize, row * _Tilesize, WHITE);
         }
     }
+
+    
     
     //menu for promotion (reference taken from chess.com)
     if(isPromoting){
