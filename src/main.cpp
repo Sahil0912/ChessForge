@@ -2,6 +2,7 @@
 #include "game/Board.hpp"
 #include "game/Piece.hpp"
 #include "ui/Renderer.hpp"
+#include "engine/Engine.hpp"
 
 
 int main(){
@@ -13,13 +14,68 @@ int main(){
     Renderer _Renderer;
     _Renderer.LoadAssets();
     SetTargetFPS(60);
+    int stateOfApp = 0; // 0 - Menu, 1 - pVp, 2 - pVstockfish 
+    Engine stockfish;
+    std::vector<std::string> moveHistory; //for engine
+    bool engineOn = false;
     while (!WindowShouldClose())
     {
-        _Renderer.HandleInput(_Board);
+        //crash prevent for stockfish restart
+        if(IsKeyPressed(KEY_R)){
+            moveHistory.clear();
+            engineOn = false;
+            stockfish = Engine();
+        }
 
+        if(stateOfApp == 2 && !engineOn){
+            engineOn = true;
+            moveHistory.clear();
+            stockfish.Start();
+        }
+        Colors turnBefore = _Board.GetTurn();
+        _Renderer.HandleInput(_Board, stateOfApp);
+        Colors turnAfter = _Board.GetTurn();
+
+        //drawing the current move;
         BeginDrawing();
-        _Renderer.Draw(_Board);
+        _Renderer.Draw(_Board, stateOfApp);
         EndDrawing();
+        if(stateOfApp == 2 && turnAfter != turnBefore && turnAfter == Colors::Black){
+            //stockfish turn
+            moveHistory.push_back(Board::MoveToUci(_Board.history.back())); //getting user last move
+            if(_Board.GetState() == GameState::Playing){
+                std::string command = "position startpos moves";
+                for(auto &str : moveHistory) command += " " + str;
+                
+                stockfish.WriteInteract(command);
+                stockfish.WriteInteract("go movetime 1000"); //wait for 1sec
+                std::string bestMove = stockfish.GetBestMove();
+                if(!bestMove.empty()){
+                    Move engineMove = Board::UciToMove(bestMove, _Board);
+                    bool isCapture = (_Board.GetPiece(engineMove.endSquare).type != Type::Empty);
+                    bool isCastle = (_Board.GetPiece(engineMove.startSquare).type == Type::King && abs(engineMove.startSquare - engineMove.endSquare) == 2);
+
+                    // if(isCastle) engineMove.isCastling = true;
+                    _Board.MakeMove(engineMove);
+                    moveHistory.push_back(bestMove);
+                    Colors turn = _Board.GetTurn();
+                    Colors oppColor = (Colors)(1 - (int)turn);
+                    bool isCheck = _Board.isSquareAttacked(_Board.findKing(turn), oppColor);
+
+                    if (isCheck) PlaySound(_Renderer.moveCheck);
+                    else if (isCastle) PlaySound(_Renderer.castle);
+                    else if (isCapture) PlaySound(_Renderer.capture);
+                    else PlaySound(_Renderer.moveSelf);
+                    //curr engine move draw
+                    BeginDrawing();
+                    _Renderer.Draw(_Board, stateOfApp);
+                    EndDrawing();
+                }
+
+            }      
+            
+        }
+        
     }
     
     _Renderer.UnloadAssets();

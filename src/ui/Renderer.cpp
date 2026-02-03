@@ -15,24 +15,86 @@ void Renderer::LoadAssets(){
     _Pieces[(int)Colors::Black][(int)Type::Rook] = LoadTexture("assets/black-rook.png");
     _Pieces[(int)Colors::Black][(int)Type::Queen] = LoadTexture("assets/black-queen.png");
     _Pieces[(int)Colors::Black][(int)Type::King] = LoadTexture("assets/black-king.png");
-
+    InitAudioDevice();
+    moveSelf = LoadSound("assets/sounds/move-self.mp3");
+    moveCheck = LoadSound("assets/sounds/move-check.mp3");
+    capture = LoadSound("assets/sounds/capture.mp3");
+    castle = LoadSound("assets/sounds/castle.mp3");
 }
+
 void Renderer::UnloadAssets(){
     for(int c = 0; c < 2; c++){
         for(int t = 1; t < 7; t++){
             UnloadTexture(_Pieces[c][t]);
         }
     }
-    
+    UnloadSound(moveSelf);
+    UnloadSound(moveCheck);
+    UnloadSound(capture);
+    UnloadSound(castle);
+    CloseAudioDevice();
+
 }
-void Renderer::Draw(Board& _Board){
+
+void Renderer::Draw(Board& _Board, int stateOfApp){
+
+// for menu state
+    if(stateOfApp == 0){
+        ClearBackground(Color{30, 30, 30, 255});
+
+        const char* title = "CHESS FORGE";
+        int fontSize = 80;
+        int titleWidth = MeasureText(title, fontSize);
+        DrawText(title, (1000 - titleWidth) / 2, 200, fontSize, WHITE);
+
+        Rectangle pVp = {300, 450, 400, 80}; 
+        
+        Vector2 mouse = GetMousePosition();
+        bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
+        DrawRectangleRec(pVp, hoverPvP ? LIGHTGRAY : GRAY);
+        
+        const char* pvpText = "Player vs Player";
+        int btnTextSize = 30;
+        int pvpTextWidth = MeasureText(pvpText, btnTextSize);
+        DrawText(pvpText, pVp.x + (pVp.width - pvpTextWidth)/2, pVp.y + (pVp.height - btnTextSize)/2, btnTextSize, BLACK);
+
+        Rectangle pVstockfish = {300, 580, 400, 80};
+        
+        bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
+        DrawRectangleRec(pVstockfish, hoverpVstockfish ? LIGHTGRAY : GRAY);
+        
+        const char* cpuText = "Player vs Stockfish";
+        int cpuTextWidth = MeasureText(cpuText, btnTextSize);
+        DrawText(cpuText, pVstockfish.x + (pVstockfish.width - cpuTextWidth)/2, pVstockfish.y + (pVstockfish.height - btnTextSize)/2, btnTextSize, BLACK);
+
+        return;
+    }
+
+//for default pVp state
+    ClearBackground(WHITE); 
 
     GameState state = _Board.GetState();
-    
+
+    int startFile = -1, startRank = -1, endFile = -1, endRank = -1;
+    Color yellowTransparent = { 255, 255, 0, 100 };
+
+    if (!_Board.history.empty()) {
+        Move lastMove = _Board.history.back();
+        
+        startFile = lastMove.startSquare % 8;
+        startRank = lastMove.startSquare / 8;
+        endFile = lastMove.endSquare % 8;
+        endRank = lastMove.endSquare / 8;
+    }
 
     for(int file = 0; file < 8; file++){
         for(int row = 0; row < 8; row++){
-            DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
+
+            if(std::make_pair(startFile, startRank) != std::make_pair(file, row) && std::make_pair(endFile, endRank) != std::make_pair(file, row))
+                DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, (file + row) % 2 ? BLUE : WHITE);
+            else
+                DrawRectangle(file * _Tilesize, row * _Tilesize, _Tilesize, _Tilesize, yellowTransparent);
+
             Piece _piece = _Board.GetPiece(row * 8 + file);
             if(_piece.color == _Board.GetTurn() && _piece.type == Type::King){
                 Colors oppColor = (Colors)(1 - (int)_Board.GetTurn());
@@ -45,6 +107,8 @@ void Renderer::Draw(Board& _Board){
                 DrawTexture(_Pieces[(int)_piece.color][(int)_piece.type], file * _Tilesize, row * _Tilesize, WHITE);
         }
     }
+
+    
     
     //menu for promotion (reference taken from chess.com)
     if(isPromoting){
@@ -132,10 +196,49 @@ void Renderer::Draw(Board& _Board){
 }
 
 void Renderer::HandleInput(Board& _Board){
+    int state = 1;
+    HandleInput(_Board, state);
+}
 
+void Renderer::HandleInput(Board& _Board, int &stateOfApp){
+
+    // in pVstockfish and its engine turn
+    if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
+        return; 
+    }
+
+// for menu state
+    if(stateOfApp == 0){
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+            Rectangle pVp = {300, 450, 400, 80}; 
+            Rectangle pVstockfish = {300, 580, 400, 80};
+
+            Vector2 mouse = GetMousePosition();
+            
+            bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
+            bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
+            
+            if(hoverPvP){
+                stateOfApp = 1;
+                
+                return;
+            }
+            else if(hoverpVstockfish){
+                stateOfApp = 2;
+
+                return;
+            }
+
+        }
+        return;
+    }
+    
+
+//for default pVp state
     if(_Board.GetState() != GameState::Playing){
         if(IsKeyPressed(KEY_R)){
             _Board.Initialize();
+            stateOfApp = 0;
             isPromoting = false; 
         }
         return;
@@ -161,7 +264,11 @@ void Renderer::HandleInput(Board& _Board){
             else if(y_coor_rect == 5 || y_coor_rect == 2) pendingMove.promotionPiece = Type::Rook;
             else if(y_coor_rect == 4 || y_coor_rect == 3) pendingMove.promotionPiece = Type::Bishop;
 
+            bool isCapture = (_Board.GetPiece(pendingMove.endSquare).type != Type::Empty);
+            bool isCastle = (_Board.GetPiece(pendingMove.startSquare).type == Type::King && abs(pendingMove.startSquare - pendingMove.endSquare) == 2);
+
             _Board.MakeMove(pendingMove);
+            PlaySounds(_Board, isCapture, isCastle);
             isPromoting = false;
         }
         return;
@@ -207,7 +314,12 @@ void Renderer::HandleInput(Board& _Board){
                         pendingMove = *findIterator;
                     }
                     else{ // normal
-                        _Board.MakeMove(*findIterator);
+                        Move currmove = *findIterator;
+                        bool isCapture = (_Board.GetPiece(currmove.endSquare).type != Type::Empty);
+                        bool isCastle = (_Board.GetPiece(currmove.startSquare).type == Type::King && abs(currmove.startSquare - currmove.endSquare) == 2);
+
+                        _Board.MakeMove(currmove);
+                        PlaySounds(_Board, isCapture, isCastle);
                     }
                     selectedSquare = -1;
                 }
@@ -225,4 +337,17 @@ void Renderer::HandleInput(Board& _Board){
         }
     }
     
+}
+
+void Renderer::PlaySounds(Board& _Board, bool isCapture, bool isCastle){
+
+
+    Colors turn = _Board.GetTurn();
+    Colors oppColor = (Colors)(1 - (int)turn);
+    bool isCheck = _Board.isSquareAttacked(_Board.findKing(turn), oppColor);
+
+    if (isCheck) PlaySound(moveCheck);
+    else if (isCastle) PlaySound(castle);
+    else if (isCapture) PlaySound(capture);
+    else PlaySound(moveSelf);
 }

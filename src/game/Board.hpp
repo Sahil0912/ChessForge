@@ -3,6 +3,7 @@
 #include "Move.hpp"
 #include <array>
 #include <vector>
+#include <string>
 
 enum class GameState{
     Playing, WhiteWin, BlackWin, Draw
@@ -25,12 +26,13 @@ private:
     void GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::vector<Move> &moves);
     void GenerateSlidingMoves(int startSquare, Colors& color, std::vector<std::pair<int, bool>> &offsets, std::vector<Move> &moves);
     
-    int findKing(Colors& color);
+    
 
 public:
     Board() = default;
     ~Board() = default;
-
+    int findKing(Colors& color);
+    std::vector <Move> history;
     void Initialize();
     GameState GetState() const;
     Piece GetPiece(int index) const;
@@ -38,6 +40,10 @@ public:
     std::vector<Move> GenerateMoves();
     bool isSquareAttacked(int square, Colors& color);
     void MakeMove(Move move);
+    static std::string IndexToSquare(int index);
+    static int SquareToIndex(std::string square);
+    static Move UciToMove(std::string uci, Board &_Board);
+    static std::string MoveToUci(Move move);
 };
 
 

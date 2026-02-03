@@ -13,10 +13,16 @@ class Renderer{
         bool isPromoting;
         Move pendingMove; //for promotion thing
     public :
+        Sound moveSelf;
+        Sound moveCheck;
+        Sound capture;
+        Sound castle;
         Renderer() : selectedSquare(-1), isPromoting(false) {}
         ~Renderer() = default;
         void LoadAssets();
-        void Draw(Board& _Board);
+        void Draw(Board& _Board, int stateOfApp = 1);
         void HandleInput(Board& _Board);
+        void HandleInput(Board& _Board, int &stateOfApp);
         void UnloadAssets();
+        void PlaySounds(Board& _Board, bool isCapture, bool isCastle);
 };

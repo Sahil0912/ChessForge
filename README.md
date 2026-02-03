@@ -16,10 +16,10 @@ The project is organized into the following directories:
 - **CMakeLists.txt**: Configuration file for building the project with CMake.
 
 ## Setup Instructions (Linux only)
-1. Ensure you have CMake and raylib installed on your system.
-   - For Arch based Distros : 
+1. Ensure you have CMake, raylib and stockfish installed on your system.
+   - For Arch based Distros (in case the package is not in pacman use yay or paru): 
       ```
-      sudo pacman -S raylib cmake
+      sudo pacman -S raylib cmake stockfish
       ```
 
 2. Clone the repository or download the project files.
@@ -40,7 +40,7 @@ The game allows two players to play chess against each other. The chessboard is 
 
 ## Future Development Plans
 - Implement a chess engine to allow for computer gameplay.
-- Adding computer bot that uses openSource engine (Stockfish, Halogen) for its moves.
+- [Done] Adding computer bot that uses openSource engine (Stockfish, Halogen) for its moves.
 - Add support for different chess variants.
 - Enhance the user interface with additional features such as move history and player statistics.
 - Optimize the engine for better performance and accuracy in move generation and evaluation.

@@ -40,6 +40,7 @@ void Board::Initialize(){
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
     gameState = GameState::Playing;
     enPassantSquare = -1;
+    history.clear();
 }
 
 Piece Board::GetPiece(int index) const {
@@ -494,5 +495,69 @@ void Board::MakeMove(Move move){
 
     }
     turn = (Colors)(1 - (int)turn);
-    GenerateMoves();
+    history.push_back(move);
+    GenerateMoves(); //just for instant checkmate and stalemate flags
+}
+
+
+std::string Board::IndexToSquare(int index){
+    int file = index % 8;
+    int row = 8 - index / 8;
+    std::string square = "";
+    square += (char)(file + 'a');
+    square += (char)(row + '0'); 
+    return square;
+}
+
+int Board::SquareToIndex(std::string square){
+    int file = (square[0] - 'a');
+    int row = 8 - (square[1] - '0');
+    int index = row * 8 + file;
+    return index;
+}
+
+Move Board::UciToMove(std::string uci, Board& _Board){
+    //will be square1 + square2
+    std::string square1 = ""; 
+    square1 += uci[0];
+    square1 += uci[1];
+
+    std::string square2 = ""; 
+    square2 += uci[2];
+    square2 += uci[3];
+
+    int index1 = SquareToIndex(square1);
+    int index2 = SquareToIndex(square2);
+    Move move(index1, index2);
+
+    if(uci.length() == 5){
+        if(uci[4] == 'q') move.promotionPiece = Type::Queen;
+        else if(uci[4] == 'r') move.promotionPiece = Type::Rook;
+        else if(uci[4] == 'b') move.promotionPiece = Type::Bishop;
+        else if(uci[4] == 'n') move.promotionPiece = Type::Knight; 
+    }
+    if(_Board.squares[move.startSquare].type == Type::King && abs(move.startSquare - move.endSquare) == 2){
+        move.isCastling = true;
+        if(index1 < index2){
+            move.oldRookSquare = index2 + 1;
+            move.newRookSquare = index1 + 1;
+        }
+        else{
+            move.oldRookSquare = index2 - 2;
+            move.newRookSquare = index1 - 1;
+        }
+    }
+    return move;    
+}
+
+std::string Board::MoveToUci(Move move){
+    std::string uci = IndexToSquare(move.startSquare) + IndexToSquare(move.endSquare);    
+    if(move.promotionPiece != Type::Empty){
+        if(move.promotionPiece == Type::Queen) uci += 'q';
+        else if(move.promotionPiece == Type::Rook) uci += 'r';
+        else if(move.promotionPiece == Type::Bishop) uci += 'b';
+        else if(move.promotionPiece == Type::Knight) uci += 'n';
+    }
+    
+    return uci;
 }
