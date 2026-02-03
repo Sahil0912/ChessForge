@@ -21,7 +21,6 @@ The project is organized into the following directories:
       ```
       sudo pacman -S raylib cmake stockfish
       ```
-   - In case you are getting raylib error messages paste the content of include directory into /usr/include/
 
 2. Clone the repository or download the project files.
 3. Navigate to the project directory and execute this command (giving permission to the executable) :
