@@ -1,11 +1,18 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 
 project(ChessForge)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(raylib REQUIRED)
+# include(FetchContent)
+# set(FETCHCONTENT_QUIET FALSE)
+# FetchContent_Declare(
+#     raylib
+#     GIT_REPOSITORY https://github.com/raysan5/raylib.git
+#     GIT_TAG 5.0
+# )
+# FetchContent_MakeAvailable(raylib)
 
 include_directories(src)
 
