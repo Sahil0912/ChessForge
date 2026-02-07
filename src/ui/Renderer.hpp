@@ -19,8 +19,9 @@ class Renderer{
         Sound castle;
         Renderer() : selectedSquare(-1), isPromoting(false) {}
         ~Renderer() = default;
-        void LoadAssets();
-        void Draw(Board& _Board, int stateOfApp = 1);
+        void LoadAssets();          
+        void Draw(Board& _Board);
+        void Draw(Board& _Board, int &stateofApp);
         void HandleInput(Board& _Board);
         void HandleInput(Board& _Board, int &stateOfApp);
         void UnloadAssets();
