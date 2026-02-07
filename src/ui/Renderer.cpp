@@ -1,5 +1,7 @@
 #include "Renderer.hpp"
 #include <iostream>
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h" 
 
 void Renderer::LoadAssets(){
     _Pieces[(int)Colors::White][(int)Type::Pawn] = LoadTexture("assets/white-pawn.png");
@@ -36,7 +38,16 @@ void Renderer::UnloadAssets(){
 
 }
 
-void Renderer::Draw(Board& _Board, int stateOfApp){
+void Renderer::Draw(Board& _Board){
+    int state = 1;
+    Draw(_Board, state);
+}
+
+void Renderer::Draw(Board& _Board, int &stateOfApp){
+
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 40); 
 
 // for menu state
     if(stateOfApp == 0){
@@ -44,29 +55,24 @@ void Renderer::Draw(Board& _Board, int stateOfApp){
 
         const char* title = "CHESS FORGE";
         int fontSize = 80;
-        int titleWidth = MeasureText(title, fontSize);
-        DrawText(title, (1000 - titleWidth) / 2, 200, fontSize, WHITE);
+        DrawText(title, (w - MeasureText(title, fontSize))/2, h * 0.2, fontSize, WHITE);
 
-        Rectangle pVp = {300, 450, 400, 80}; 
-        
-        Vector2 mouse = GetMousePosition();
-        bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
-        DrawRectangleRec(pVp, hoverPvP ? LIGHTGRAY : GRAY);
-        
-        const char* pvpText = "Player vs Player";
-        int btnTextSize = 30;
-        int pvpTextWidth = MeasureText(pvpText, btnTextSize);
-        DrawText(pvpText, pVp.x + (pVp.width - pvpTextWidth)/2, pVp.y + (pVp.height - btnTextSize)/2, btnTextSize, BLACK);
+        float btnWidth = 500;
+        float btnHeight = 100;
+        float startX = (w - btnWidth) / 2;
+        float startY = h * 0.5;
 
-        Rectangle pVstockfish = {300, 580, 400, 80};
-        
-        bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
-        DrawRectangleRec(pVstockfish, hoverpVstockfish ? LIGHTGRAY : GRAY);
-        
-        const char* cpuText = "Player vs Stockfish";
-        int cpuTextWidth = MeasureText(cpuText, btnTextSize);
-        DrawText(cpuText, pVstockfish.x + (pVstockfish.width - cpuTextWidth)/2, pVstockfish.y + (pVstockfish.height - btnTextSize)/2, btnTextSize, BLACK);
+        if (GuiButton((Rectangle){startX, startY, btnWidth, btnHeight}, "Player vs Player")) {
+            stateOfApp = 1; 
+        }
 
+        if (GuiButton((Rectangle){startX, startY + btnHeight + 20, btnWidth, btnHeight}, "Player vs Stockfish")) {
+            stateOfApp = 2;
+        }
+
+        if (GuiButton((Rectangle){startX, startY + (btnHeight + 20) * 2, btnWidth, btnHeight}, "Quit Game")) {
+            exit(0);
+        }
         return;
     }
 
@@ -201,37 +207,38 @@ void Renderer::HandleInput(Board& _Board){
 }
 
 void Renderer::HandleInput(Board& _Board, int &stateOfApp){
+    if(stateOfApp != 1 && stateOfApp != 2) return;
 
     // in pVstockfish and its engine turn
     if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
         return; 
     }
 
-// for menu state
-    if(stateOfApp == 0){
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-            Rectangle pVp = {300, 450, 400, 80}; 
-            Rectangle pVstockfish = {300, 580, 400, 80};
+// // for menu state
+//     if(stateOfApp == 0){
+//         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
+//             Rectangle pVp = {300, 450, 400, 80}; 
+//             Rectangle pVstockfish = {300, 580, 400, 80};
 
-            Vector2 mouse = GetMousePosition();
+//             Vector2 mouse = GetMousePosition();
             
-            bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
-            bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
+//             bool hoverPvP = CheckCollisionPointRec(mouse, pVp);
+//             bool hoverpVstockfish = CheckCollisionPointRec(mouse, pVstockfish);
             
-            if(hoverPvP){
-                stateOfApp = 1;
+//             if(hoverPvP){
+//                 stateOfApp = 1;
                 
-                return;
-            }
-            else if(hoverpVstockfish){
-                stateOfApp = 2;
+//                 return;
+//             }
+//             else if(hoverpVstockfish){
+//                 stateOfApp = 2;
 
-                return;
-            }
+//                 return;
+//             }
 
-        }
-        return;
-    }
+//         }
+//         return;
+//     }
     
 
 //for default pVp state
