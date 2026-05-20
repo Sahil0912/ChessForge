@@ -39,7 +39,7 @@ The project is organized into the following directories:
 The game allows two players to play chess against each other. The chessboard is displayed using raylib, and players can move pieces by clicking on them and selecting their destination squares. 
 
 ## Future Development Plans
-- Implement a chess engine to allow for computer gameplay.
+- [Done] Implement a chess engine to allow for computer gameplay.
 - [Done] Adding computer bot that uses openSource engine (Stockfish, Halogen) for its moves.
 - Add support for different chess variants.
 - Enhance the user interface with additional features such as move history and player statistics.
