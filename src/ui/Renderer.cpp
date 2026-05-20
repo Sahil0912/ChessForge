@@ -58,19 +58,24 @@ void Renderer::Draw(Board& _Board, int &stateOfApp){
         DrawText(title, (w - MeasureText(title, fontSize))/2, h * 0.2, fontSize, WHITE);
 
         float btnWidth = 500;
-        float btnHeight = 100;
+        float btnHeight = 80;
         float startX = (w - btnWidth) / 2;
-        float startY = h * 0.5;
+        float startY = h * 0.45;
+        float gap = 15;
 
         if (GuiButton((Rectangle){startX, startY, btnWidth, btnHeight}, "Player vs Player")) {
             stateOfApp = 1; 
         }
 
-        if (GuiButton((Rectangle){startX, startY + btnHeight + 20, btnWidth, btnHeight}, "Player vs Stockfish")) {
+        if (GuiButton((Rectangle){startX, startY + (btnHeight + gap), btnWidth, btnHeight}, "Player vs ChessForge")) {
+            stateOfApp = 3;
+        }
+
+        if (GuiButton((Rectangle){startX, startY + (btnHeight + gap) * 2, btnWidth, btnHeight}, "Player vs Stockfish")) {
             stateOfApp = 2;
         }
 
-        if (GuiButton((Rectangle){startX, startY + (btnHeight + 20) * 2, btnWidth, btnHeight}, "Quit Game")) {
+        if (GuiButton((Rectangle){startX, startY + (btnHeight + gap) * 3, btnWidth, btnHeight}, "Quit Game")) {
             exit(0);
         }
         return;
@@ -207,10 +212,10 @@ void Renderer::HandleInput(Board& _Board){
 }
 
 void Renderer::HandleInput(Board& _Board, int &stateOfApp){
-    if(stateOfApp != 1 && stateOfApp != 2) return;
+    if(stateOfApp != 1 && stateOfApp != 2 && stateOfApp != 3) return;
 
-    // in pVstockfish and its engine turn
-    if(stateOfApp == 2 && _Board.GetTurn() == Colors::Black) {
+    // in pVstockfish or pVForge and its engine turn
+    if((stateOfApp == 2 || stateOfApp == 3) && _Board.GetTurn() == Colors::Black) {
         return; 
     }
 
