@@ -1,7 +1,63 @@
 #include "Board.hpp"
+#include <random>
+
+// Zobrist static members
+uint64_t Board::zobristPieces[64][2][7];
+uint64_t Board::zobristSide;
+uint64_t Board::zobristCastling[4];
+uint64_t Board::zobristEnPassant[8];
+bool Board::zobristInitialized = false;
+
+void Board::InitZobrist() {
+    if (zobristInitialized) return;
+    std::mt19937_64 rng(0xDEADBEEF42ULL);
+    for (int sq = 0; sq < 64; sq++)
+        for (int c = 0; c < 2; c++)
+            for (int p = 0; p < 7; p++)
+                zobristPieces[sq][c][p] = rng();
+    zobristSide = rng();
+    for (int i = 0; i < 4; i++) zobristCastling[i] = rng();
+    for (int i = 0; i < 8; i++) zobristEnPassant[i] = rng();
+    zobristInitialized = true;
+}
+
+void Board::ComputeHashFromScratch() {
+    zobristHash = 0;
+    for (int sq = 0; sq < 64; sq++) {
+        if (squares[sq].type != Type::Empty) {
+            zobristHash ^= zobristPieces[sq][(int)squares[sq].color][(int)squares[sq].type];
+        }
+    }
+    if (turn == Colors::Black) zobristHash ^= zobristSide;
+    if (whiteCastleKingSide)  zobristHash ^= zobristCastling[0];
+    if (whiteCastleQueenSide) zobristHash ^= zobristCastling[1];
+    if (blackCastleKingSide)  zobristHash ^= zobristCastling[2];
+    if (blackCastleQueenSide) zobristHash ^= zobristCastling[3];
+    if (enPassantSquare != -1) zobristHash ^= zobristEnPassant[enPassantSquare % 8];
+}
+
+uint64_t Board::GetHash() const { return zobristHash; }
+const std::array<Piece, 64>& Board::GetSquares() const { return squares; }
+void Board::SetState(GameState state) { gameState = state; }
+int Board::GetEnPassantSquare() const { return enPassantSquare; }
+
+GameState Board::CheckGameState() {
+    std::vector<Move> moves = GenerateMoves();
+    if (moves.empty()) {
+        Colors oppTurn = (Colors)(1 - (int)turn);
+        if (isSquareAttacked(findKing(turn), oppTurn)) {
+            if (turn == Colors::Black) gameState = GameState::WhiteWin;
+            else gameState = GameState::BlackWin;
+        } else {
+            gameState = GameState::Draw;
+        }
+    }
+    return gameState;
+}
 
 void Board::Initialize(){
     turn = Colors::White;
+    gameState = GameState::Playing;
     for (int i = 16; i < 48; i++)
     {
         squares[i].type = Type::Empty;
@@ -38,9 +94,9 @@ void Board::Initialize(){
     squares[60].type = Type::King;
 
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
-    gameState = GameState::Playing;
     enPassantSquare = -1;
     history.clear();
+    ComputeHashFromScratch();
 }
 
 Piece Board::GetPiece(int index) const {
@@ -55,7 +111,7 @@ GameState Board::GetState() const{
     return gameState;
 }
 
-bool Board::isSquareAttacked(int square, Colors& color) { //attacked by this color or not
+bool Board::isSquareAttacked(int square, Colors color) { //attacked by this color or not
     //to see if this square is attacking which piece
     Colors oppColor = (Colors)(1 - (int)color);
     //bishop or queen
@@ -108,61 +164,67 @@ bool Board::isSquareAttacked(int square, Colors& color) { //attacked by this col
 }
 
 void Board::GeneratePawnMoves(int startSquare, Colors& color, std::vector<Move> &moves){
+    // Helper: add a move, generating all 4 promotions if on the last rank
+    auto addPawnMove = [&](int from, int to) {
+        bool isPromotion = (color == Colors::Black && to >= 56) ||
+                           (color == Colors::White && to < 8);
+        if (isPromotion) {
+            moves.push_back(Move(from, to, Type::Queen));
+            moves.push_back(Move(from, to, Type::Rook));
+            moves.push_back(Move(from, to, Type::Bishop));
+            moves.push_back(Move(from, to, Type::Knight));
+        } else {
+            moves.push_back(Move(from, to));
+        }
+    };
+
     if(color == Colors::Black){
         // Have to move in positive direction
         if(startSquare < 16){
-            // first move 
+            // first move (double push — can't promote from rank 7 double push)
             if(squares[startSquare + 16].type == Type::Empty && squares[startSquare + 8].type == Type::Empty){
                 Move move(startSquare, startSquare + 16);
                 moves.push_back(move);
             }
-            
         }
-        // after moves (always can be done)
-        if(squares[startSquare + 8].type == Type::Empty){
-            Move move(startSquare, startSquare + 8);
-            moves.push_back(move);
+        // single push
+        if(startSquare + 8 < 64 && squares[startSquare + 8].type == Type::Empty){
+            addPawnMove(startSquare, startSquare + 8);
         }
+        // captures
         if((startSquare + 1) % 8){
-            if(enPassantSquare == startSquare + 9 || (squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White)){
-                Move move(startSquare, startSquare + 9);
-                moves.push_back(move);
+            if(startSquare + 9 < 64 && (enPassantSquare == startSquare + 9 || (squares[startSquare + 9].type != Type::Empty && squares[startSquare + 9].color == Colors::White))){
+                addPawnMove(startSquare, startSquare + 9);
             }
         }
         if(startSquare % 8){
-            if(enPassantSquare == startSquare + 7 || (squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White)){
-                Move move(startSquare, startSquare + 7);
-                moves.push_back(move);
+            if(startSquare + 7 < 64 && (enPassantSquare == startSquare + 7 || (squares[startSquare + 7].type != Type::Empty && squares[startSquare + 7].color == Colors::White))){
+                addPawnMove(startSquare, startSquare + 7);
             }
         }
-        
     }
     else if(color == Colors::White){
         // Have to move in negative direction
-
         if(startSquare > 47){
+            // first move (double push)
             if(squares[startSquare - 16].type == Type::Empty && squares[startSquare - 8].type == Type::Empty){
                 Move move(startSquare, startSquare - 16);
                 moves.push_back(move);
             }
         }
-            
-        // after moves (always can be done)
-
-        if(squares[startSquare - 8].type == Type::Empty){
-            Move move(startSquare, startSquare - 8);
-            moves.push_back(move);
+        // single push
+        if(startSquare - 8 >= 0 && squares[startSquare - 8].type == Type::Empty){
+            addPawnMove(startSquare, startSquare - 8);
         }
+        // captures
         if((startSquare + 1) % 8){
-            if(enPassantSquare == startSquare - 7 || (squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black)){
-                Move move(startSquare, startSquare - 7);
-                moves.push_back(move);
+            if(startSquare - 7 >= 0 && (enPassantSquare == startSquare - 7 || (squares[startSquare - 7].type != Type::Empty && squares[startSquare - 7].color == Colors::Black))){
+                addPawnMove(startSquare, startSquare - 7);
             }
         }
         if(startSquare % 8){
-            if(enPassantSquare == startSquare - 9 || (squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black)){
-                Move move(startSquare, startSquare - 9);
-                moves.push_back(move);
+            if(startSquare - 9 >= 0 && (enPassantSquare == startSquare - 9 || (squares[startSquare - 9].type != Type::Empty && squares[startSquare - 9].color == Colors::Black))){
+                addPawnMove(startSquare, startSquare - 9);
             }
         }
     }
@@ -297,12 +359,12 @@ void Board::GeneratePieceMoves(int startSquare, Type& type, Colors& color, std::
     else if(type == Type::King) GenerateKingMoves(startSquare, color, moves);
 }
 
-int Board::findKing(Colors& color){
+int Board::findKing(Colors color){
     for (int pos = 0; pos < 64; pos++)
     {
         if(squares[pos].type == Type::King && squares[pos].color == color) return pos;
     }
-    
+    return -1;
 }
 
 std::vector<Move> Board::GenerateMoves(){
@@ -396,107 +458,177 @@ std::vector<Move> Board::GenerateMoves(){
             }
         }
     }
-    if(legalMoves.empty()){
-        if(isSquareAttacked(findKing(turn), oppTurn)){
-            if(turn == Colors::Black) gameState = GameState::WhiteWin;
-            else if(turn == Colors::White) gameState = GameState::BlackWin;
-        }
-        else{
-            gameState = GameState::Draw;
-        }
-    }
     return legalMoves;
 }
 
-void Board::MakeMove(Move move){
+UndoInfo Board::MakeMove(Move move){
+    // Save undo info
+    UndoInfo undo;
+    undo.capturedPiece = squares[move.endSquare];
+    undo.enPassantSquare = enPassantSquare;
+    undo.whiteCastleKingSide = whiteCastleKingSide;
+    undo.whiteCastleQueenSide = whiteCastleQueenSide;
+    undo.blackCastleKingSide = blackCastleKingSide;
+    undo.blackCastleQueenSide = blackCastleQueenSide;
+    undo.zobristHash = zobristHash;
 
-    //making sure enPassant remains for only 1 turn
+    int startSquare = move.startSquare;
+    int endSquare = move.endSquare;
+
+    // Remove old en passant from hash
+    if(enPassantSquare != -1) zobristHash ^= zobristEnPassant[enPassantSquare % 8];
     enPassantSquare = -1;
 
-    // assuming its valid
-    int startSquare = move.startSquare;
-    
-    int endSquare = move.endSquare;
-    int oldRookSquare = move.oldRookSquare;
-    int newRookSquare = move.newRookSquare;
-    
-    bool isCastle = move.isCastling;
+    // Remove old castling from hash
+    if(whiteCastleKingSide)  zobristHash ^= zobristCastling[0];
+    if(whiteCastleQueenSide) zobristHash ^= zobristCastling[1];
+    if(blackCastleKingSide)  zobristHash ^= zobristCastling[2];
+    if(blackCastleQueenSide) zobristHash ^= zobristCastling[3];
 
-    //setting up castling flags
+    // Update castling flags
     if(whiteCastleKingSide){
-        if(startSquare == 63 || endSquare == 63 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King)){
+        if(startSquare == 63 || endSquare == 63 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King))
             whiteCastleKingSide = false;
-        }
     }
     if(whiteCastleQueenSide){
-        if(startSquare == 56 || endSquare == 56 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King)){
+        if(startSquare == 56 || endSquare == 56 || (squares[startSquare].color == Colors::White && squares[startSquare].type == Type::King))
             whiteCastleQueenSide = false;
-        }
     }
     if(blackCastleKingSide){
-        if(startSquare == 7 || endSquare == 7 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King)){
+        if(startSquare == 7 || endSquare == 7 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King))
             blackCastleKingSide = false;
-        }
     }
     if(blackCastleQueenSide){
-        if(startSquare == 0 || endSquare == 0 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King)){
+        if(startSquare == 0 || endSquare == 0 || (squares[startSquare].color == Colors::Black && squares[startSquare].type == Type::King))
             blackCastleQueenSide = false;
-        }
     }
-    if(isCastle){
+
+    // Add new castling to hash
+    if(whiteCastleKingSide)  zobristHash ^= zobristCastling[0];
+    if(whiteCastleQueenSide) zobristHash ^= zobristCastling[1];
+    if(blackCastleKingSide)  zobristHash ^= zobristCastling[2];
+    if(blackCastleQueenSide) zobristHash ^= zobristCastling[3];
+
+    if(move.isCastling){
+        // XOR out king and rook from old squares
+        zobristHash ^= zobristPieces[startSquare][(int)squares[startSquare].color][(int)squares[startSquare].type];
+        zobristHash ^= zobristPieces[move.oldRookSquare][(int)squares[move.oldRookSquare].color][(int)squares[move.oldRookSquare].type];
+
         squares[endSquare] = squares[startSquare];
-        squares[newRookSquare] = squares[oldRookSquare];
-        
-        squares[startSquare].type = Type::Empty;
-        squares[startSquare].color = Colors::None;
-        squares[oldRookSquare].type = Type::Empty;
-        squares[oldRookSquare].color = Colors::None;
+        squares[move.newRookSquare] = squares[move.oldRookSquare];
+        squares[startSquare] = {Colors::None, Type::Empty};
+        squares[move.oldRookSquare] = {Colors::None, Type::Empty};
+
+        // XOR in king and rook at new squares
+        zobristHash ^= zobristPieces[endSquare][(int)squares[endSquare].color][(int)squares[endSquare].type];
+        zobristHash ^= zobristPieces[move.newRookSquare][(int)squares[move.newRookSquare].color][(int)squares[move.newRookSquare].type];
     }
     else{
+        // XOR out moving piece from start
+        zobristHash ^= zobristPieces[startSquare][(int)squares[startSquare].color][(int)squares[startSquare].type];
+        // XOR out captured piece (if any)
+        if(squares[endSquare].type != Type::Empty)
+            zobristHash ^= zobristPieces[endSquare][(int)squares[endSquare].color][(int)squares[endSquare].type];
+
         if(squares[startSquare].type == Type::Pawn){
             if(turn == Colors::Black){
-
-                //for setting up enPassant sq
-                if(startSquare < 16 && endSquare == startSquare + 16){
+                if(startSquare < 16 && endSquare == startSquare + 16)
                     enPassantSquare = startSquare + 8;
+                // En passant capture
+                if((endSquare == startSquare + 7 || endSquare == startSquare + 9) && undo.capturedPiece.type == Type::Empty){
+                    zobristHash ^= zobristPieces[endSquare - 8][(int)squares[endSquare - 8].color][(int)squares[endSquare - 8].type];
+                    squares[endSquare - 8] = {Colors::None, Type::Empty};
                 }
-
-                //for detecting if other player took the pawn using enPassant
-                if((endSquare == startSquare + 7 || endSquare == startSquare + 9) && squares[endSquare].type == Type::Empty){
-                    squares[endSquare - 8].type = Type::Empty;
-                    squares[endSquare - 8].color = Colors::None;
-                }
-            } 
+            }
             else if(turn == Colors::White){
-
-                //for setting up enPassant sq
-                if(startSquare >= 48 && endSquare == startSquare - 16){
+                if(startSquare >= 48 && endSquare == startSquare - 16)
                     enPassantSquare = startSquare - 8;
-                }
-
-                //for detecting if other player took the pawn using enPassant
-                if((endSquare == startSquare - 7 || endSquare == startSquare - 9) && squares[endSquare].type == Type::Empty){
-                    squares[endSquare + 8].type = Type::Empty;
-                    squares[endSquare + 8].color = Colors::None;
+                // En passant capture
+                if((endSquare == startSquare - 7 || endSquare == startSquare - 9) && undo.capturedPiece.type == Type::Empty){
+                    zobristHash ^= zobristPieces[endSquare + 8][(int)squares[endSquare + 8].color][(int)squares[endSquare + 8].type];
+                    squares[endSquare + 8] = {Colors::None, Type::Empty};
                 }
             }
         }
 
         if(move.promotionPiece != Type::Empty){
             squares[endSquare].type = move.promotionPiece;
-        }
-        else {
+        } else {
             squares[endSquare].type = squares[startSquare].type;
         }
         squares[endSquare].color = squares[startSquare].color;
+        squares[startSquare] = {Colors::None, Type::Empty};
 
-        squares[startSquare].type = Type::Empty;
-        squares[startSquare].color = Colors::None;
-
+        // XOR in piece at destination
+        zobristHash ^= zobristPieces[endSquare][(int)squares[endSquare].color][(int)squares[endSquare].type];
     }
+
+    // Add new en passant to hash
+    if(enPassantSquare != -1) zobristHash ^= zobristEnPassant[enPassantSquare % 8];
+
+    // Flip side
+    zobristHash ^= zobristSide;
     turn = (Colors)(1 - (int)turn);
     history.push_back(move);
-    GenerateMoves(); //just for instant checkmate and stalemate flags
+    return undo;
+}
+
+void Board::UnmakeMove(const Move& move, const UndoInfo& undo){
+    // Pop from history
+    if(!history.empty()) history.pop_back();
+
+    // Flip turn back
+    turn = (Colors)(1 - (int)turn);
+
+    int startSquare = move.startSquare;
+    int endSquare = move.endSquare;
+
+    if(move.isCastling){
+        // Move king back
+        squares[startSquare] = squares[endSquare];
+        squares[endSquare] = {Colors::None, Type::Empty};
+        // Move rook back
+        squares[move.oldRookSquare] = squares[move.newRookSquare];
+        squares[move.newRookSquare] = {Colors::None, Type::Empty};
+    }
+    else{
+        // Detect en passant purely from move/undo info (NOT from board state)
+        // En passant = pawn moved diagonally to en passant square, no piece was captured on that square
+        bool wasPawnMove = (move.promotionPiece != Type::Empty) ||
+                           (squares[endSquare].type == Type::Pawn);
+        int fileDiff = (endSquare % 8) - (startSquare % 8);
+        bool wasDiagonal = (fileDiff != 0);
+        bool wasEnPassant = wasPawnMove && wasDiagonal &&
+                            undo.enPassantSquare != -1 &&
+                            endSquare == undo.enPassantSquare &&
+                            undo.capturedPiece.type == Type::Empty;
+
+        if(wasEnPassant){
+            // Restore the captured pawn
+            if(turn == Colors::White){
+                squares[endSquare + 8] = {Colors::Black, Type::Pawn};
+            } else {
+                squares[endSquare - 8] = {Colors::White, Type::Pawn};
+            }
+        }
+
+        // Move piece back (undo promotion)
+        if(move.promotionPiece != Type::Empty){
+            squares[startSquare] = {turn, Type::Pawn};
+        } else {
+            squares[startSquare] = squares[endSquare];
+        }
+        // Restore captured piece
+        squares[endSquare] = undo.capturedPiece;
+    }
+
+    // Restore state
+    enPassantSquare = undo.enPassantSquare;
+    whiteCastleKingSide = undo.whiteCastleKingSide;
+    whiteCastleQueenSide = undo.whiteCastleQueenSide;
+    blackCastleKingSide = undo.blackCastleKingSide;
+    blackCastleQueenSide = undo.blackCastleQueenSide;
+    zobristHash = undo.zobristHash;
 }
 
 
