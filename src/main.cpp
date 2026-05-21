@@ -34,6 +34,43 @@ int main(){
         if(stateOfApp == 4){
             _Renderer.HandleEvalInput(stateOfApp);
 
+            if(_Renderer.hasPendingEval){
+                _Renderer.hasPendingEval = false;
+
+                // Show mini-loading screen for the dynamic eval
+                BeginDrawing();
+                _Renderer.DrawEvalMode();
+                int tw = MeasureText("Analyzing Move...", 20);
+                DrawText("Analyzing Move...", 600 + (400 - tw)/2, 30, 20, YELLOW);
+                EndDrawing();
+
+                // Build state up to current
+                std::vector<std::string> uciMoves;
+                Board tempBoard;
+                tempBoard.Initialize();
+                for(int i = 0; i < _Renderer.evalMoveIndex; i++){
+                    uciMoves.push_back(Board::MoveToUci(_Renderer.evalGameMoves[i]));
+                    tempBoard.MakeMove(_Renderer.evalGameMoves[i]);
+                }
+                
+                // Forge Eval (50ms search)
+                forgeEngine.GetBestMove(tempBoard, 50);
+                int forgeEval = forgeEngine.GetLastBestScore();
+                if(tempBoard.GetTurn() == Colors::Black) forgeEval = -forgeEval;
+                
+                // Stockfish Eval (Depth 10)
+                StockfishEngine sfTemp;
+                sfTemp.Start();
+                int sfEval = sfTemp.EvaluatePosition(uciMoves, 10);
+                if(tempBoard.GetTurn() == Colors::Black) sfEval = -sfEval;
+
+                EvalData ed;
+                ed.uci = uciMoves.back();
+                ed.forgeEvalCp = forgeEval;
+                ed.stockfishEvalCp = sfEval;
+                _Renderer.evalResults.push_back(ed);
+            }
+
             BeginDrawing();
             _Renderer.DrawEvalMode();
             EndDrawing();

@@ -30,6 +30,7 @@ class Renderer{
         int evalMoveIndex = 0;
         int evalScrollStart = 0;
         float evalScrollAccum = 0.0f;
+        bool hasPendingEval = false;
         std::vector<EvalData> evalResults;
         std::vector<Move> evalGameMoves; // stored copy of the game's move history
 

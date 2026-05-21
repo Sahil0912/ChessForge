@@ -407,6 +407,29 @@ void Renderer::DrawEvalMode(){
         DrawRectangle(ef * evalTileSize, boardOffsetY + er * evalTileSize, evalTileSize, evalTileSize, yellowTransparent);
     }
 
+    if (selectedSquare != -1) {
+        std::vector<Move> moves = replayBoard.GenerateMoves();
+        for (auto &move : moves) {
+            if (move.startSquare == selectedSquare) {
+                int file = move.endSquare % 8;
+                int rank = move.endSquare / 8;
+                int center_x = file * evalTileSize + evalTileSize / 2;
+                int center_y = boardOffsetY + rank * evalTileSize + evalTileSize / 2;
+                
+                if (replayBoard.GetPiece(move.endSquare).type == Type::Empty) {
+                    DrawCircle(center_x, center_y, evalTileSize * 0.15, Fade(DARKGRAY, 0.5f));
+                } else {
+                    float outerRadius = evalTileSize * 0.45f;
+                    float innerRadius = evalTileSize * 0.40f; 
+                    DrawRing(
+                        (Vector2){(float)center_x, (float)center_y}, 
+                        innerRadius, outerRadius, 0.0f, 360.0f, 32, Fade(DARKGRAY, 0.5f)
+                    );
+                }
+            }
+        }
+    }
+
     // === SIDEBAR (400px, starting at x=600) ===
     int sidebarX = 600;
     int sidebarW = 400;
@@ -593,7 +616,58 @@ void Renderer::HandleEvalInput(int &stateOfApp){
         Vector2 mousePos = GetMousePosition();
         int sidebarX = 600;
         
-        if (mousePos.x > sidebarX) {
+        if (mousePos.x <= sidebarX) {
+            // Rebuild board state to validate moves
+            Board replayBoard;
+            replayBoard.Initialize();
+            for(int i = 0; i < evalMoveIndex && i < (int)evalGameMoves.size(); i++){
+                replayBoard.MakeMove(evalGameMoves[i]);
+            }
+
+            int evalTileSize = 75;
+            int boardOffsetY = (1000 - 600) / 2;
+            int file = mousePos.x / evalTileSize;
+            int row = (mousePos.y - boardOffsetY) / evalTileSize;
+            
+            if (file >= 0 && file < 8 && row >= 0 && row < 8) {
+                int clickedSquare = row * 8 + file;
+                
+                if (selectedSquare == -1) {
+                    Piece p = replayBoard.GetPiece(clickedSquare);
+                    if (p.type != Type::Empty && p.color == replayBoard.GetTurn()) {
+                        selectedSquare = clickedSquare;
+                    }
+                } else {
+                    std::vector<Move> moves = replayBoard.GenerateMoves();
+                    bool moveMade = false;
+                    for (auto &move : moves) {
+                        if (move.startSquare == selectedSquare && move.endSquare == clickedSquare) {
+                            // Auto-promote to Queen in eval mode for simplicity
+                            if (move.promotionPiece != Type::Empty) {
+                                move.promotionPiece = Type::Queen;
+                            }
+                            
+                            // Truncate future history
+                            if (evalMoveIndex < (int)evalGameMoves.size()) {
+                                evalGameMoves.erase(evalGameMoves.begin() + evalMoveIndex, evalGameMoves.end());
+                                evalResults.erase(evalResults.begin() + evalMoveIndex, evalResults.end());
+                            }
+                            
+                            evalGameMoves.push_back(move);
+                            evalMoveIndex++;
+                            hasPendingEval = true;
+                            moveMade = true;
+                            break;
+                        }
+                    }
+                    selectedSquare = -1; // deselect after clicking somewhere
+                }
+            } else {
+                selectedSquare = -1; // clicked outside board bounds but in the 600px width area
+            }
+        } else {
+            // Sidebar logic
+            selectedSquare = -1; // clear selection if clicked sidebar
             int barY = 60;
             int barH = 300;
             int listY = barY + barH + 30;
