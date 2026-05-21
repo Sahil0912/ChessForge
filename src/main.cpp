@@ -30,6 +30,8 @@ int main(){
 
     while (!WindowShouldClose())
     {
+        if (stateOfApp == -1) break;
+
         // Eval mode
         if(stateOfApp == 4){
             _Renderer.HandleEvalInput(stateOfApp);

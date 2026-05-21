@@ -76,7 +76,7 @@ void Renderer::Draw(Board& _Board, int &stateOfApp){
         }
 
         if (GuiButton((Rectangle){startX, startY + (btnHeight + gap) * 3, btnWidth, btnHeight}, "Quit Game")) {
-            exit(0);
+            stateOfApp = -1;
         }
         return;
     }
