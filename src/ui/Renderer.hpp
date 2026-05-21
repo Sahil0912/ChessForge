@@ -9,6 +9,8 @@ struct EvalData {
     std::string uci;       // e.g. "e2e4"
     int forgeEvalCp;       // centipawns, White's perspective
     int stockfishEvalCp;   // centipawns, White's perspective
+    std::string forgeBestMove;
+    std::string stockfishBestMove;
 };
 
 class Renderer{

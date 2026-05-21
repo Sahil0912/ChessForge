@@ -704,6 +704,9 @@ Move Board::UciToMove(std::string uci, Board& _Board){
 }
 
 std::string Board::MoveToUci(Move move){
+    if(move.startSquare == 0 && move.endSquare == 0 && move.promotionPiece == Type::Empty){
+        return "(none)";
+    }
     std::string uci = IndexToSquare(move.startSquare) + IndexToSquare(move.endSquare);    
     if(move.promotionPiece != Type::Empty){
         if(move.promotionPiece == Type::Queen) uci += 'q';

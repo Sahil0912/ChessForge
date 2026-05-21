@@ -56,20 +56,23 @@ int main(){
                 }
                 
                 // Forge Eval (50ms search)
-                forgeEngine.GetBestMove(tempBoard, 50);
+                Move forgeBestMoveObj = forgeEngine.GetBestMove(tempBoard, 50);
                 int forgeEval = forgeEngine.GetLastBestScore();
                 if(tempBoard.GetTurn() == Colors::Black) forgeEval = -forgeEval;
                 
                 // Stockfish Eval (Depth 10)
                 StockfishEngine sfTemp;
                 sfTemp.Start();
-                int sfEval = sfTemp.EvaluatePosition(uciMoves, 10);
+                auto sfResult = sfTemp.EvaluatePosition(uciMoves, 10);
+                int sfEval = sfResult.first;
                 if(tempBoard.GetTurn() == Colors::Black) sfEval = -sfEval;
 
                 EvalData ed;
                 ed.uci = uciMoves.back();
                 ed.forgeEvalCp = forgeEval;
                 ed.stockfishEvalCp = sfEval;
+                ed.forgeBestMove = Board::MoveToUci(forgeBestMoveObj);
+                ed.stockfishBestMove = sfResult.second;
                 _Renderer.evalResults.push_back(ed);
             }
 
@@ -126,7 +129,7 @@ int main(){
                 analysisBoard.MakeMove(gameMoves[i]);
 
                 // ForgeEngine search eval (from side-to-move perspective)
-                forgeEngine.GetBestMove(analysisBoard, 50); // 50ms search per move
+                Move forgeBestMoveObj = forgeEngine.GetBestMove(analysisBoard, 50); // 50ms search per move
                 int forgeEval = forgeEngine.GetLastBestScore();
                 // Convert to White's perspective
                 // After the move, GetTurn() returns the OTHER side
@@ -137,7 +140,8 @@ int main(){
                 // else: Black just moved, eval is from White's perspective → keep
 
                 // Stockfish eval
-                int sfEval = sfAnalyzer.EvaluatePosition(uciMoves, 10);
+                auto sfResult = sfAnalyzer.EvaluatePosition(uciMoves, 10);
+                int sfEval = sfResult.first;
                 // Same conversion: SF returns from side-to-move perspective
                 if(analysisBoard.GetTurn() == Colors::Black){
                     sfEval = -sfEval;
@@ -147,6 +151,8 @@ int main(){
                 ed.uci = uci;
                 ed.forgeEvalCp = forgeEval;
                 ed.stockfishEvalCp = sfEval;
+                ed.forgeBestMove = Board::MoveToUci(forgeBestMoveObj);
+                ed.stockfishBestMove = sfResult.second;
                 _Renderer.evalResults.push_back(ed);
             }
 

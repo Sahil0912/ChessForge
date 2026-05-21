@@ -125,7 +125,15 @@ Move Search::FindBestMove(Board& board, int timeLimit){
 
     Move bestMove;
     auto moves = board.GenerateMoves();
-    if(moves.empty()) return bestMove;
+    if(moves.empty()) {
+        Colors oppTurn = (Colors)(1 - (int)board.GetTurn());
+        if(board.isSquareAttacked(board.findKing(board.GetTurn()), oppTurn)){
+            lastBestScore = -MATE_SCORE;
+        } else {
+            lastBestScore = 0;
+        }
+        return bestMove;
+    }
     if(moves.size() == 1) return moves[0];
 
     bestMove = moves[0]; // fallback

@@ -12,6 +12,7 @@
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 class IChessEngine {
@@ -35,7 +36,7 @@ public:
   void WriteInteract(std::string command);
   std::string GetBestMoveUci();
   Move GetBestMove(Board &board, int timeLimitMs) override;
-  int EvaluatePosition(const std::vector<std::string>& uciMoves, int depth = 10);
+  std::pair<int, std::string> EvaluatePosition(const std::vector<std::string>& uciMoves, int depth = 10);
 };
 
 // custom engine (in-process search)

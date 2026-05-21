@@ -98,7 +98,7 @@ Move StockfishEngine::GetBestMove(Board& board, int timeLimitMs){
     return Move();
 }
 
-int StockfishEngine::EvaluatePosition(const std::vector<std::string>& uciMoves, int depth){
+std::pair<int, std::string> StockfishEngine::EvaluatePosition(const std::vector<std::string>& uciMoves, int depth){
     std::string command = "position startpos";
     if(!uciMoves.empty()){
         command += " moves";
@@ -112,6 +112,7 @@ int StockfishEngine::EvaluatePosition(const std::vector<std::string>& uciMoves, 
     // Read output until bestmove, parse last score
     char buffer[4096];
     std::string result = "";
+    std::string bestMoveStr = "";
 
     while(true){
         int bytes = read(pipeOut[0], buffer, sizeof(buffer) - 1);
@@ -138,9 +139,14 @@ int StockfishEngine::EvaluatePosition(const std::vector<std::string>& uciMoves, 
             ss >> mateIn;
             score = (mateIn > 0) ? 49000 - mateIn : -49000 - mateIn;
         }
+        pos = line.find("bestmove ");
+        if(pos != std::string::npos){
+            std::istringstream ss(line.substr(pos + 9));
+            ss >> bestMoveStr;
+        }
     }
 
-    return score; // from side-to-move perspective
+    return {score, bestMoveStr}; // from side-to-move perspective
 }
 
 // ============================================================

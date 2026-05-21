@@ -447,9 +447,13 @@ void Renderer::DrawEvalMode(){
 
     // Current eval display
     int currentForge = 0, currentSF = 0;
+    std::string currentForgeBest = "";
+    std::string currentSFBest = "";
     if(evalMoveIndex > 0 && evalMoveIndex <= (int)evalResults.size()){
         currentForge = evalResults[evalMoveIndex - 1].forgeEvalCp;
         currentSF = evalResults[evalMoveIndex - 1].stockfishEvalCp;
+        currentForgeBest = evalResults[evalMoveIndex - 1].forgeBestMove;
+        currentSFBest = evalResults[evalMoveIndex - 1].stockfishBestMove;
     }
 
     // Eval bar (vertical, left side of sidebar)
@@ -474,11 +478,11 @@ void Renderer::DrawEvalMode(){
 
     // Eval numbers next to bar
     int evalTextX = barX + barW + 15;
-    char sfBuf[64], forgeBuf[64];
-    snprintf(sfBuf, sizeof(sfBuf), "Stockfish: %s%.2f",
-             currentSF >= 0 ? "+" : "", currentSF / 100.0f);
-    snprintf(forgeBuf, sizeof(forgeBuf), "Forge:     %s%.2f",
-             currentForge >= 0 ? "+" : "", currentForge / 100.0f);
+    char sfBuf[128], forgeBuf[128];
+    snprintf(sfBuf, sizeof(sfBuf), "Stockfish: %s%.2f (%s)",
+             currentSF >= 0 ? "+" : "", currentSF / 100.0f, currentSFBest.c_str());
+    snprintf(forgeBuf, sizeof(forgeBuf), "Forge:     %s%.2f (%s)",
+             currentForge >= 0 ? "+" : "", currentForge / 100.0f, currentForgeBest.c_str());
 
     DrawText(sfBuf, evalTextX, barY + 10, 20, Color{100, 200, 255, 255});
     DrawText(forgeBuf, evalTextX, barY + 40, 20, Color{255, 180, 80, 255});
