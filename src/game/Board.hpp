@@ -44,6 +44,7 @@ public:
     ~Board() = default;
     int findKing(Colors color);
     std::vector <Move> history;
+    std::vector<uint64_t> hashHistory;
     void Initialize();
     GameState GetState() const;
     void SetState(GameState state);
@@ -54,6 +55,7 @@ public:
     int GetEnPassantSquare() const;
     std::vector<Move> GenerateMoves();
     bool isSquareAttacked(int square, Colors color);
+    bool IsThreefoldRepetition() const;
     UndoInfo MakeMove(Move move);
     void UnmakeMove(const Move& move, const UndoInfo& undo);
     uint64_t GetHash() const;

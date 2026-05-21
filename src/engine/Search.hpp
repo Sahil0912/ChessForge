@@ -27,8 +27,10 @@ public:
     Move FindBestMove(Board& board, int timeLimitMs);
     int  GetNodesSearched() const { return nodesSearched; }
     int  GetDepthReached() const { return depthReached; }
+    int  GetLastBestScore() const { return lastBestScore; }
 
 private:
+    int lastBestScore = 0;
     int Negamax(Board& board, int depth, int alpha, int beta, int ply);
     int Quiescence(Board& board, int alpha, int beta, int ply);
 

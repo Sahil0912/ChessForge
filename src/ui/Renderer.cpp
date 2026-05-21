@@ -203,6 +203,10 @@ void Renderer::Draw(Board& _Board, int &stateOfApp){
         const char* restartMessage = "Press R to Restart";
         textWidth = MeasureText(restartMessage, 30);
         DrawText(restartMessage, (_Tilesize * 8 - textWidth)/2, y + 80, 30, LIGHTGRAY);
+
+        const char* evalMessage = "Press E to Evaluate";
+        textWidth = MeasureText(evalMessage, 30);
+        DrawText(evalMessage, (_Tilesize * 8 - textWidth)/2, y + 120, 30, LIME);
     }
 }
 
@@ -362,4 +366,264 @@ void Renderer::PlaySounds(Board& _Board, bool isCapture, bool isCastle){
     else if (isCastle) PlaySound(castle);
     else if (isCapture) PlaySound(capture);
     else PlaySound(moveSelf);
+}
+
+void Renderer::DrawEvalMode(){
+    ClearBackground(Color{30, 30, 30, 255});
+
+    // Replay board to evalMoveIndex
+    Board replayBoard;
+    replayBoard.Initialize();
+    for(int i = 0; i < evalMoveIndex && i < (int)evalGameMoves.size(); i++){
+        replayBoard.MakeMove(evalGameMoves[i]);
+    }
+
+    int evalTileSize = 75;
+
+    int boardOffsetY = (1000 - 600) / 2; // center vertically
+
+    // Draw board (left side, 600px)
+    for(int file = 0; file < 8; file++){
+        for(int row = 0; row < 8; row++){
+            DrawRectangle(file * evalTileSize, boardOffsetY + row * evalTileSize, evalTileSize, evalTileSize,
+                         (file + row) % 2 ? BLUE : WHITE);
+
+            Piece _piece = replayBoard.GetPiece(row * 8 + file);
+            if(_piece.type != Type::Empty) {
+                DrawTextureEx(_Pieces[(int)_piece.color][(int)_piece.type], 
+                             { (float)file * evalTileSize, (float)(boardOffsetY + row * evalTileSize) }, 
+                             0.0f, (float)evalTileSize / 128.0f, WHITE);
+            }
+        }
+    }
+
+    // Highlight last move if evalMoveIndex > 0
+    if(evalMoveIndex > 0 && evalMoveIndex <= (int)evalGameMoves.size()){
+        Move lastMove = evalGameMoves[evalMoveIndex - 1];
+        Color yellowTransparent = { 255, 255, 0, 100 };
+        int sf = lastMove.startSquare % 8, sr = lastMove.startSquare / 8;
+        int ef = lastMove.endSquare % 8, er = lastMove.endSquare / 8;
+        DrawRectangle(sf * evalTileSize, boardOffsetY + sr * evalTileSize, evalTileSize, evalTileSize, yellowTransparent);
+        DrawRectangle(ef * evalTileSize, boardOffsetY + er * evalTileSize, evalTileSize, evalTileSize, yellowTransparent);
+    }
+
+    // === SIDEBAR (400px, starting at x=600) ===
+    int sidebarX = 600;
+    int sidebarW = 400;
+    int screenH = 1000;
+
+    // Sidebar background
+    DrawRectangle(sidebarX, 0, sidebarW, screenH, Color{25, 25, 25, 255});
+    DrawLine(sidebarX, 0, sidebarX, screenH, Color{60, 60, 60, 255});
+
+    // Title
+    const char* title = "POST-GAME ANALYSIS";
+    int titleW = MeasureText(title, 22);
+    DrawText(title, sidebarX + (sidebarW - titleW)/2, 15, 22, WHITE);
+    DrawLine(sidebarX + 10, 45, sidebarX + sidebarW - 10, 45, Color{60, 60, 60, 255});
+
+    // Current eval display
+    int currentForge = 0, currentSF = 0;
+    if(evalMoveIndex > 0 && evalMoveIndex <= (int)evalResults.size()){
+        currentForge = evalResults[evalMoveIndex - 1].forgeEvalCp;
+        currentSF = evalResults[evalMoveIndex - 1].stockfishEvalCp;
+    }
+
+    // Eval bar (vertical, left side of sidebar)
+    int barX = sidebarX + 20;
+    int barY = 60;
+    int barW = 30;
+    int barH = 300;
+
+    // Clamp eval to [-1000, 1000] for bar display
+    float sfClamp = (float)currentSF;
+    if(sfClamp > 1000) sfClamp = 1000;
+    if(sfClamp < -1000) sfClamp = -1000;
+    // White portion: 0.5 + eval/2000 (0.5 = even, 1.0 = white winning)
+    float whitePortion = 0.5f + sfClamp / 2000.0f;
+    int whiteH = (int)(barH * whitePortion);
+    int blackH = barH - whiteH;
+
+    // Draw bar: black on top, white on bottom
+    DrawRectangle(barX, barY, barW, blackH, Color{50, 50, 50, 255});
+    DrawRectangle(barX, barY + blackH, barW, whiteH, Color{240, 240, 240, 255});
+    DrawRectangleLines(barX, barY, barW, barH, Color{80, 80, 80, 255});
+
+    // Eval numbers next to bar
+    int evalTextX = barX + barW + 15;
+    char sfBuf[64], forgeBuf[64];
+    snprintf(sfBuf, sizeof(sfBuf), "Stockfish: %s%.2f",
+             currentSF >= 0 ? "+" : "", currentSF / 100.0f);
+    snprintf(forgeBuf, sizeof(forgeBuf), "Forge:     %s%.2f",
+             currentForge >= 0 ? "+" : "", currentForge / 100.0f);
+
+    DrawText(sfBuf, evalTextX, barY + 10, 20, Color{100, 200, 255, 255});
+    DrawText(forgeBuf, evalTextX, barY + 40, 20, Color{255, 180, 80, 255});
+
+    // Move counter
+    char moveBuf[64];
+    snprintf(moveBuf, sizeof(moveBuf), "Move %d of %d", evalMoveIndex, (int)evalGameMoves.size());
+    DrawText(moveBuf, evalTextX, barY + 80, 18, LIGHTGRAY);
+
+    // Separator
+    DrawLine(sidebarX + 10, barY + barH + 20, sidebarX + sidebarW - 10, barY + barH + 20,
+             Color{60, 60, 60, 255});
+
+    // === Move list ===
+    int listY = barY + barH + 30;
+    int listH = screenH - listY - 50; // leave room for nav hint
+    int rowH = 24;
+    int maxVisible = listH / rowH;
+
+    // Header
+    DrawText("#", sidebarX + 15, listY, 16, GRAY);
+    DrawText("Move", sidebarX + 45, listY, 16, GRAY);
+    DrawText("Forge", sidebarX + 130, listY, 16, Color{255, 180, 80, 255});
+    DrawText("SF", sidebarX + 230, listY, 16, Color{100, 200, 255, 255});
+    listY += rowH + 4;
+    int maxScroll = std::max(0, (int)evalResults.size() - maxVisible);
+
+    // Safety clamp
+    if(evalScrollStart > maxScroll) evalScrollStart = maxScroll;
+    if(evalScrollStart < 0) evalScrollStart = 0;
+
+    for(int i = evalScrollStart; i < (int)evalResults.size() && i < evalScrollStart + maxVisible; i++){
+        int y = listY + (i - evalScrollStart) * rowH;
+        bool isCurrent = (i == evalMoveIndex - 1);
+
+        if(isCurrent){
+            DrawRectangle(sidebarX + 5, y - 2, sidebarW - 10, rowH, Color{60, 60, 80, 255});
+        }
+
+        // Move number: "1." for white, "1..." for black
+        int moveNum = (i / 2) + 1;
+        char numBuf[16];
+        if(i % 2 == 0) snprintf(numBuf, sizeof(numBuf), "%d.", moveNum);
+        else snprintf(numBuf, sizeof(numBuf), "%d...", moveNum);
+
+        Color textColor = isCurrent ? WHITE : LIGHTGRAY;
+        DrawText(numBuf, sidebarX + 15, y, 16, textColor);
+        DrawText(evalResults[i].uci.c_str(), sidebarX + 55, y, 16, textColor);
+
+        char fBuf[16], sBuf[16];
+        snprintf(fBuf, sizeof(fBuf), "%+.2f", evalResults[i].forgeEvalCp / 100.0f);
+        snprintf(sBuf, sizeof(sBuf), "%+.2f", evalResults[i].stockfishEvalCp / 100.0f);
+
+        // Color code: green if positive (good for white), red if negative
+        Color forgeColor = evalResults[i].forgeEvalCp >= 0 ?
+            Color{100, 220, 100, 255} : Color{220, 100, 100, 255};
+        Color sfColor = evalResults[i].stockfishEvalCp >= 0 ?
+            Color{100, 220, 100, 255} : Color{220, 100, 100, 255};
+
+        DrawText(fBuf, sidebarX + 125, y, 16, forgeColor);
+        DrawText(sBuf, sidebarX + 220, y, 16, sfColor);
+    }
+
+    // Draw visual scrollbar
+    int scrollbarX = sidebarX + sidebarW - 15;
+    int scrollbarY = listY;
+    int scrollbarW = 10;
+    int scrollbarH = listH - (rowH + 4);
+
+    if ((int)evalResults.size() > maxVisible) {
+        // Track
+        DrawRectangle(scrollbarX, scrollbarY, scrollbarW, scrollbarH, Color{40, 40, 40, 255});
+        // Thumb
+        float contentRatio = (float)maxVisible / evalResults.size();
+        int thumbH = std::max(20, (int)(scrollbarH * contentRatio));
+        float scrollRatio = (float)evalScrollStart / maxScroll;
+        int thumbY = scrollbarY + (int)(scrollRatio * (scrollbarH - thumbH));
+        DrawRectangle(scrollbarX, thumbY, scrollbarW, thumbH, Color{120, 120, 120, 255});
+    }
+
+    // Navigation hint at bottom
+    const char* navHint = "<- -> Navigate | R Exit";
+    int navW = MeasureText(navHint, 18);
+    DrawText(navHint, sidebarX + (sidebarW - navW)/2, screenH - 30, 18, GRAY);
+}
+
+void Renderer::HandleEvalInput(int &stateOfApp){
+    bool moveChanged = false;
+    if(IsKeyPressed(KEY_RIGHT) || IsKeyPressedRepeat(KEY_RIGHT)){
+        if(evalMoveIndex < (int)evalGameMoves.size()){
+            evalMoveIndex++;
+            moveChanged = true;
+        }
+    }
+    if(IsKeyPressed(KEY_LEFT) || IsKeyPressedRepeat(KEY_LEFT)){
+        if(evalMoveIndex > 0){
+            evalMoveIndex--;
+            moveChanged = true;
+        }
+    }
+
+    if(moveChanged && evalMoveIndex > 0) {
+        int listY = 60 + 300 + 30; // barY + barH + 30
+        int screenH = 1000;
+        int listH = screenH - listY - 50;
+        int maxVisible = listH / 24; // rowH
+        
+        if (evalMoveIndex - 1 < evalScrollStart) {
+            evalScrollStart = std::max(0, evalMoveIndex - 1);
+        } else if (evalMoveIndex - 1 >= evalScrollStart + maxVisible) {
+            evalScrollStart = (evalMoveIndex - 1) - maxVisible + 1;
+        }
+    }
+    if(IsKeyPressed(KEY_R)){
+        evalMode = false;
+        evalMoveIndex = 0;
+        evalScrollStart = 0;
+        evalScrollAccum = 0.0f;
+        evalResults.clear();
+        evalGameMoves.clear();
+        stateOfApp = 0;
+    }
+
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0.0f) {
+        evalScrollAccum -= wheel * 3.0f;
+        int scrollDelta = (int)evalScrollAccum;
+        if (scrollDelta != 0) {
+            evalScrollStart += scrollDelta;
+            evalScrollAccum -= scrollDelta;
+        }
+    }
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 mousePos = GetMousePosition();
+        int sidebarX = 600;
+        
+        if (mousePos.x > sidebarX) {
+            int barY = 60;
+            int barH = 300;
+            int listY = barY + barH + 30;
+            int screenH = 1000;
+            int listH = screenH - listY - 50;
+            int rowH = 24;
+            int maxVisible = listH / rowH;
+            int itemsStartY = listY + rowH + 4;
+            int maxScroll = std::max(0, (int)evalResults.size() - maxVisible);
+            
+            // Check scrollbar click
+            int scrollbarX = sidebarX + 400 - 15;
+            int scrollbarY = itemsStartY;
+            int scrollbarW = 10;
+            int scrollbarH = listH - (rowH + 4);
+
+            if ((int)evalResults.size() > maxVisible &&
+                mousePos.x >= scrollbarX && mousePos.x <= scrollbarX + scrollbarW &&
+                mousePos.y >= scrollbarY && mousePos.y <= scrollbarY + scrollbarH) {
+                float clickRatio = (mousePos.y - scrollbarY) / (float)scrollbarH;
+                evalScrollStart = (int)(clickRatio * maxScroll);
+            } 
+            else if (mousePos.y >= itemsStartY && mousePos.y < itemsStartY + maxVisible * rowH) {
+                int clickedRow = (mousePos.y - itemsStartY) / rowH;
+                int clickedIndex = evalScrollStart + clickedRow;
+                
+                if (clickedIndex >= 0 && clickedIndex < (int)evalResults.size()) {
+                    evalMoveIndex = clickedIndex + 1;
+                }
+            }
+        }
+    }
 }

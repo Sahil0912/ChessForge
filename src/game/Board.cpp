@@ -41,7 +41,24 @@ const std::array<Piece, 64>& Board::GetSquares() const { return squares; }
 void Board::SetState(GameState state) { gameState = state; }
 int Board::GetEnPassantSquare() const { return enPassantSquare; }
 
+bool Board::IsThreefoldRepetition() const {
+    int count = 0;
+    for (const auto& h : hashHistory) {
+        if (h == zobristHash) {
+            count++;
+            if (count >= 3) return true;
+        }
+    }
+    return false;
+}
+
 GameState Board::CheckGameState() {
+    // Threefold repetition
+    if (IsThreefoldRepetition()) {
+        gameState = GameState::Draw;
+        return gameState;
+    }
+
     std::vector<Move> moves = GenerateMoves();
     if (moves.empty()) {
         Colors oppTurn = (Colors)(1 - (int)turn);
@@ -96,7 +113,9 @@ void Board::Initialize(){
     whiteCastleKingSide = whiteCastleQueenSide = blackCastleKingSide = blackCastleQueenSide = true;
     enPassantSquare = -1;
     history.clear();
+    hashHistory.clear();
     ComputeHashFromScratch();
+    hashHistory.push_back(zobristHash);
 }
 
 Piece Board::GetPiece(int index) const {
@@ -570,12 +589,14 @@ UndoInfo Board::MakeMove(Move move){
     zobristHash ^= zobristSide;
     turn = (Colors)(1 - (int)turn);
     history.push_back(move);
+    hashHistory.push_back(zobristHash);
     return undo;
 }
 
 void Board::UnmakeMove(const Move& move, const UndoInfo& undo){
     // Pop from history
     if(!history.empty()) history.pop_back();
+    if(!hashHistory.empty()) hashHistory.pop_back();
 
     // Flip turn back
     turn = (Colors)(1 - (int)turn);

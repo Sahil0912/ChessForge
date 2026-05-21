@@ -3,6 +3,7 @@
 #include "game/Piece.hpp"
 #include "ui/Renderer.hpp"
 #include "engine/Engine.hpp"
+#include "engine/Evaluator.hpp"
 #include <string>
 #include <memory>
 
@@ -17,7 +18,7 @@ int main(){
     Renderer _Renderer;
     _Renderer.LoadAssets();
     SetTargetFPS(60);
-    int stateOfApp = 0; // 0 - Menu, 1 - pVp, 2 - pVStockfish, 3 - pVForge
+    int stateOfApp = 0; // 0 - Menu, 1 - pVp, 2 - pVStockfish, 3 - pVForge, 4 - EvalMode
 
     // Engine instances
     StockfishEngine stockfish;
@@ -29,6 +30,16 @@ int main(){
 
     while (!WindowShouldClose())
     {
+        // Eval mode
+        if(stateOfApp == 4){
+            _Renderer.HandleEvalInput(stateOfApp);
+
+            BeginDrawing();
+            _Renderer.DrawEvalMode();
+            EndDrawing();
+            continue;
+        }
+
         //crash prevent for restart
         if(IsKeyPressed(KEY_R)){
             _Board.Initialize();
@@ -38,6 +49,73 @@ int main(){
             lastDepth = 0;
             lastNodes = 0;
             stateOfApp = 0;
+        }
+
+        // Enter evaluation mode after game over
+        if(IsKeyPressed(KEY_E) && _Board.GetState() != GameState::Playing){
+            // Show loading screen
+            BeginDrawing();
+            ClearBackground(Color{30, 30, 30, 255});
+            const char* loadMsg = "Analyzing with Stockfish...";
+            int tw = MeasureText(loadMsg, 40);
+            DrawText(loadMsg, (1000 - tw)/2, 450, 40, LIME);
+            const char* subMsg = "This may take a moment";
+            int sw = MeasureText(subMsg, 24);
+            DrawText(subMsg, (1000 - sw)/2, 510, 24, LIGHTGRAY);
+            EndDrawing();
+
+            // Store game moves
+            std::vector<Move> gameMoves = _Board.history;
+            _Renderer.evalGameMoves = gameMoves;
+            _Renderer.evalResults.clear();
+
+            // Start Stockfish for analysis
+            StockfishEngine sfAnalyzer;
+            sfAnalyzer.Start();
+
+            // Replay game and evaluate each position after each move
+            Board analysisBoard;
+            analysisBoard.Initialize();
+            std::vector<std::string> uciMoves;
+
+            for(size_t i = 0; i < gameMoves.size(); i++){
+                std::string uci = Board::MoveToUci(gameMoves[i]);
+                uciMoves.push_back(uci);
+
+                // Determine whose turn it WAS (before the move)
+                Colors sideThatMoved = analysisBoard.GetTurn();
+                analysisBoard.MakeMove(gameMoves[i]);
+
+                // ForgeEngine search eval (from side-to-move perspective)
+                forgeEngine.GetBestMove(analysisBoard, 50); // 50ms search per move
+                int forgeEval = forgeEngine.GetLastBestScore();
+                // Convert to White's perspective
+                // After the move, GetTurn() returns the OTHER side
+                if(analysisBoard.GetTurn() == Colors::Black){
+                    // White just moved, eval is from Black's perspective → negate
+                    forgeEval = -forgeEval;
+                }
+                // else: Black just moved, eval is from White's perspective → keep
+
+                // Stockfish eval
+                int sfEval = sfAnalyzer.EvaluatePosition(uciMoves, 10);
+                // Same conversion: SF returns from side-to-move perspective
+                if(analysisBoard.GetTurn() == Colors::Black){
+                    sfEval = -sfEval;
+                }
+
+                EvalData ed;
+                ed.uci = uci;
+                ed.forgeEvalCp = forgeEval;
+                ed.stockfishEvalCp = sfEval;
+                _Renderer.evalResults.push_back(ed);
+            }
+
+            // Enter eval mode
+            _Renderer.evalMode = true;
+            _Renderer.evalMoveIndex = (int)gameMoves.size(); // start at final position
+            stateOfApp = 4;
+            continue;
         }
 
         // Start stockfish if needed

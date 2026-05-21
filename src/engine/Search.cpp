@@ -120,6 +120,7 @@ Move Search::FindBestMove(Board& board, int timeLimit){
     timeUp = false;
     nodesSearched = 0;
     depthReached = 0;
+    lastBestScore = Evaluator::Evaluate(board);
     std::memset(killers, 0, sizeof(killers));
 
     Move bestMove;
@@ -163,6 +164,7 @@ Move Search::FindBestMove(Board& board, int timeLimit){
         if(timeUp) break;
 
         bestMove = iterBestMove;
+        lastBestScore = bestScore;
         depthReached = depth;
 
         // found a mate, stop searching
@@ -178,6 +180,17 @@ int Search::Negamax(Board& board, int depth, int alpha, int beta, int ply){
     if(IsTimeUp()) return 0;
 
     nodesSearched++;
+
+    // Repetition detection: treat 2-fold as draw in search
+    if (ply > 0) {
+        int repCount = 0;
+        for (const auto& h : board.hashHistory) {
+            if (h == board.GetHash()) {
+                repCount++;
+                if (repCount >= 2) return 0;
+            }
+        }
+    }
 
     // TT probe
     uint64_t hash = board.GetHash();

@@ -98,6 +98,51 @@ Move StockfishEngine::GetBestMove(Board& board, int timeLimitMs){
     return Move();
 }
 
+int StockfishEngine::EvaluatePosition(const std::vector<std::string>& uciMoves, int depth){
+    std::string command = "position startpos";
+    if(!uciMoves.empty()){
+        command += " moves";
+        for(const auto& m : uciMoves){
+            command += " " + m;
+        }
+    }
+    WriteInteract(command);
+    WriteInteract("go depth " + std::to_string(depth));
+
+    // Read output until bestmove, parse last score
+    char buffer[4096];
+    std::string result = "";
+
+    while(true){
+        int bytes = read(pipeOut[0], buffer, sizeof(buffer) - 1);
+        if(bytes <= 0) break;
+        buffer[bytes] = '\0';
+        result += buffer;
+        if(result.find("bestmove") != std::string::npos) break;
+    }
+
+    // Parse the last "score cp X" or "score mate X" from info lines
+    int score = 0;
+    std::istringstream stream(result);
+    std::string line;
+    while(std::getline(stream, line)){
+        size_t pos = line.find("score cp ");
+        if(pos != std::string::npos){
+            std::istringstream ss(line.substr(pos + 9));
+            ss >> score;
+        }
+        pos = line.find("score mate ");
+        if(pos != std::string::npos){
+            int mateIn;
+            std::istringstream ss(line.substr(pos + 11));
+            ss >> mateIn;
+            score = (mateIn > 0) ? 49000 - mateIn : -49000 - mateIn;
+        }
+    }
+
+    return score; // from side-to-move perspective
+}
+
 // ============================================================
 // ForgeEngine (custom in-process search)
 // ============================================================
